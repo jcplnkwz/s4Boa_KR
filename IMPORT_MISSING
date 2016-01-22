@@ -1,0 +1,202 @@
+vate_CH_adCT_uni <- vate_CH_adCT[!duplicated(vate_CH_adCT$id),]
+vate_CH_adRT_uni <- vate_CH_adRT[!duplicated(vate_CH_adRT$id),]
+vate_CH_adRT_adCT_uni <- vate_CH_adRT_adCT[!duplicated(vate_CH_adRT_adCT$id),]
+vate_CH_adRTCT_uni<- vate_CH_adRTCT[!duplicated(vate_CH_adRTCT$id),]
+vate_CHonly_uni<- vate_CHonly[!duplicated(vate_CHonly$id),]
+
+
+vate_nadCT_CH_uni<- vate_nadCT_CH[!duplicated(vate_nadCT_CH$id),]
+vate_nadCT_CH_adCT_uni<- vate_nadCT_CH_adCT[!duplicated(vate_nadCT_CH_adCT$id),]
+vate_nadCT_CH_adRT_uni<- vate_nadCT_CH_adRT[!duplicated(vate_nadCT_CH_adRT$id),]
+vate_nadCT_CH_adRT_adCT_uni<- vate_nadCT_CH_adRT_adCT[!duplicated(vate_nadCT_CH_adRT_adCT$id),]
+vate_nadCT_CH_adRTCT_uni<- vate_nadCT_CH_adRTCT[!duplicated(vate_nadCT_CH_adRTCT$id),]
+vate_nadCTonly_uni<- vate_nadCTonly[!duplicated(vate_nadCTonly$id),]
+
+
+vate_nadRT_CH_uni<- vate_nadRT_CH[!duplicated(vate_nadRT_CH$id),]
+vate_nadRT_CH_adCT_uni<- vate_nadRT_CH_adCT[!duplicated(vate_nadRT_CH_adCT$id),]
+vate_nadRT_CH_adRT_uni<- vate_nadRT_CH_adRT[!duplicated(vate_nadRT_CH_adRT$id),]
+vate_nadRT_CH_adRT_adCT_uni<- vate_nadRT_CH_adRT_adCT[!duplicated(vate_nadRT_CH_adRT_adCT$id),]
+vate_nadRT_CH_adRTCT_uni<- vate_nadRT_CH_adRTCT[!duplicated(vate_nadRT_CH_adRTCT$id),]
+vate_nadRTonly_uni<- vate_nadRTonly[!duplicated(vate_nadRTonly$id),]
+
+
+vate_nadRT_nadCT_CH_uni<- vate_nadRT_nadCT_CH[!duplicated(vate_nadRT_nadCT_CH$id),]
+vate_nadRT_nadCT_CH_adCT_uni<- vate_nadRT_nadCT_CH_adCT[!duplicated(vate_nadRT_nadCT_CH_adCT$id),]
+vate_nadRT_nadCT_CH_adRT_uni<- vate_nadRT_nadCT_CH_adRT[!duplicated(vate_nadRT_nadCT_CH_adRT$id),]
+vate_nadRT_nadCT_CH_adRT_adCT_uni<- vate_nadRT_nadCT_CH_adRT_adCT[!duplicated(vate_nadRT_nadCT_CH_adRT_adCT$id),]
+vate_nadRT_nadCT_CH_adRTCT_uni<- vate_nadRT_nadCT_CH_adRTCT[!duplicated(vate_nadRT_nadCT_CH_adRTCT$id),]
+vate_nadRT_nadCTonly_uni<- vate_nadRT_nadCTonly[!duplicated(vate_nadRT_nadCTonly$id),]
+
+
+vate_nadRTCT_CH_uni<- vate_nadRTCT_CH[!duplicated(vate_nadRTCT_CH$id),]
+vate_nadRTCT_CH_adCT_uni<- vate_nadRTCT_CH_adCT[!duplicated(vate_nadRTCT_CH_adCT$id),]
+vate_nadRTCT_CH_adRT_uni<- vate_nadRTCT_CH_adRT[!duplicated(vate_nadRTCT_CH_adRT$id),]
+vate_nadRTCT_CH_adRT_adCT_uni<- vate_nadRTCT_CH_adRT_adCT[!duplicated(vate_nadRTCT_CH_adRT_adCT$id),]
+vate_nadRTCT_CH_adRTCT_uni<- vate_nadRTCT_CH_adRTCT[!duplicated(vate_nadRTCT_CH_adRTCT$id),]
+vate_nadRTCTonly_uni<- vate_nadRTCTonly[!duplicated(vate_nadRTCTonly$id),]
+
+vate_nothing_uni<- vate_nothing[!duplicated(vate_nothing$id),]
+
+#################################################################N PATIENTS IN BOA_IMPORT FILES##########
+
+L_vate_noNad_uni <- dim(vate_CH_adCT_uni)[1]+dim(vate_CH_adRT_uni)[1]+dim(vate_CH_adRT_adCT_uni)[1]+dim(vate_CH_adRTCT_uni)[1]+dim(vate_CHonly_uni)[1]
+L_vate_nadCT_uni <- dim(vate_nadCT_CH_uni)[1]+dim(vate_nadCT_CH_adCT_uni)[1]+dim(vate_nadCT_CH_adRT_uni)[1]+dim(vate_nadCT_CH_adRT_adCT_uni)[1]+dim(vate_nadCT_CH_adRTCT_uni)[1]+dim(vate_nadCTonly_uni)[1]
+L_vate_nadRT_uni <- dim(vate_nadRT_CH_uni)[1]+dim(vate_nadRT_CH_adCT_uni)[1]+dim(vate_nadRT_CH_adRT_uni)[1]+dim(vate_nadRT_CH_adRT_adCT_uni)[1]+dim(vate_nadRT_CH_adRTCT_uni)[1]+dim(vate_nadRTonly_uni)[1]
+L_vate_nadRT_nadCT_uni <- dim(vate_nadRT_nadCT_CH_uni)[1]+dim(vate_nadRT_nadCT_CH_adCT_uni)[1]+dim(vate_nadRT_nadCT_CH_adRT_uni)[1]+dim(vate_nadRT_nadCT_CH_adRT_adCT_uni)[1]+dim(vate_nadRT_nadCT_CH_adRTCT_uni)[1]+dim(vate_nadRT_nadCTonly_uni)[1]
+L_vate_nadRTCT_uni <- dim(vate_nadRTCT_CH_uni)[1]+dim(vate_nadRTCT_CH_adCT_uni)[1]+dim(vate_nadRTCT_CH_adRT_uni)[1]+dim(vate_nadRTCT_CH_adRT_adCT_uni)[1]+dim(vate_nadRTCT_CH_adRTCT_uni)[1]+dim(vate_nadRTCTonly_uni)[1]
+L_vate_nothing_uni <- dim(vate_nothing_uni)[1]
+
+tot_boa <- L_vate_noNad_uni + L_vate_nadCT_uni + L_vate_nadRT_uni + L_vate_nadRT_nadCT_uni + L_vate_nadRTCT_uni + L_vate_nothing_uni
+
+
+#####################################################################################################
+
+id_CH_adCT_uni <- vate_CH_adCT_uni$id
+id_CH_adRT_uni <- vate_CH_adRT_uni$id
+id_CH_adRT_adCT_uni <- vate_CH_adRT_adCT_uni$id
+id_CH_adRTCT_uni<- vate_CH_adRTCT_uni$id
+id_CHonly_uni<- vate_CHonly_uni$id
+
+id_nadCT_CH_uni<- vate_nadCT_CH_uni$id
+id_nadCT_CH_adCT_uni<- vate_nadCT_CH_adCT_uni$id
+id_nadCT_CH_adRT_uni<- vate_nadCT_CH_adRT_uni$id
+id_nadCT_CH_adRT_adCT_uni<- vate_nadCT_CH_adRT_adCT_uni$id
+id_nadCT_CH_adRTCT_uni<- vate_nadCT_CH_adRTCT_uni$id
+id_nadCTonly_uni<- vate_nadCTonly_uni$id
+
+id_nadRT_CH_uni<- vate_nadRT_CH_uni$id
+id_nadRT_CH_adCT_uni<- vate_nadRT_CH_adCT_uni$id
+id_nadRT_CH_adRT_uni<- vate_nadRT_CH_adRT_uni$id
+id_nadRT_CH_adRT_adCT_uni<- vate_nadRT_CH_adRT_adCT_uni$id
+id_nadRT_CH_adRTCT_uni<- vate_nadRT_CH_adRTCT_uni$id
+id_nadRTonly_uni<- vate_nadRTonly_uni$id
+
+id_nadRT_nadCT_CH_uni<- vate_nadRT_nadCT_CH_uni$id
+id_nadRT_nadCT_CH_adCT_uni<- vate_nadRT_nadCT_CH_adCT_uni$id
+id_nadRT_nadCT_CH_adRT_uni<- vate_nadRT_nadCT_CH_adRT_uni$id
+id_nadRT_nadCT_CH_adRT_adCT_uni<- vate_nadRT_nadCT_CH_adRT_adCT_uni$id
+id_nadRT_nadCT_CH_adRTCT_uni<- vate_nadRT_nadCT_CH_adRTCT_uni$id
+id_nadRT_nadCTonly_uni<- vate_nadRT_nadCTonly_uni$id
+
+id_nadRTCT_CH_uni<- vate_nadRTCT_CH_uni$id
+id_nadRTCT_CH_adCT_uni<- vate_nadRTCT_CH_adCT_uni$id
+id_nadRTCT_CH_adRT_uni<- vate_nadRTCT_CH_adRT_uni$id
+id_nadRTCT_CH_adRT_adCT_uni<- vate_nadRTCT_CH_adRT_adCT_uni$id
+id_nadRTCT_CH_adRTCT_uni<- vate_nadRTCT_CH_adRTCT_uni$id
+id_nadRTCTonly_uni<- vate_nadRTCTonly_uni$id
+
+id_nothing_uni<- vate_nothing_uni$id
+
+ids_boa <- c( id_CH_adCT_uni, id_CH_adRT_uni, id_CH_adRT_adCT_uni, id_CH_adRTCT_uni, id_CHonly_uni, id_nadCT_CH_uni, id_nadCT_CH_adCT_uni, id_nadCT_CH_adRT_uni, id_nadCT_CH_adRT_adCT_uni,
+ id_nadCT_CH_adRTCT_uni, id_nadCTonly_uni, id_nadRT_CH_uni, id_nadRT_CH_adCT_uni, id_nadRT_CH_adRT_uni, id_nadRT_CH_adRT_adCT_uni, id_nadRT_CH_adRTCT_uni, id_nadRTonly_uni, id_nadRT_nadCT_CH_uni,
+ id_nadRT_nadCT_CH_adCT_uni, id_nadRT_nadCT_CH_adRT_uni, id_nadRT_nadCT_CH_adRT_adCT_uni, id_nadRT_nadCT_CH_adRTCT_uni, id_nadRT_nadCTonly_uni, id_nadRTCT_CH_uni, id_nadRTCT_CH_adCT_uni,
+ id_nadRTCT_CH_adRT_uni, id_nadRTCT_CH_adRT_adCT_uni, id_nadRTCT_CH_adRTCT_uni, id_nadRTCTonly_uni, id_nothing_uni) 
+ 
+ #####################################################################################
+ 
+missing_patients <- subset(vate, !(vate$id %in% ids_boa))
+write.table(missing_patients, file = "missing_patients.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE) 
+
+#######################################################################
+##########################################################################CMPARE WITH FULL DATASET#############################
+missing_patients_uni <- missing_patients[!duplicated(missing_patients$id),]
+vate_uni <- vate[!duplicated(vate$id),]
+dim(missing_patients_uni) #=324
+tot_boa #=2888
+dim(vate_uni) #=3212
+
+###OK!!!, MA: 1) PERCHè NON RIENTRANO NEI PIANI DI TRATTAMENTO? 2)TOT_BOA è DAVVERO UGUALE ALLA SOMMA DEI PAZIENTOI IMPORTANTI CON LE MAPPATURE HUB?
+
+
+#####################################Leftovers files#####################
+
+setwd("C:/Users/Admin/Desktop/Rect Spider 4 to BOA/retto/byTreatment/vate_nadRT_CH_adCT")
+LO_vate_nadRT_CH_adCT <- read.table("vate_nadRT_CH_adCT.txt", sep="\t", header=T, quote="")
+
+setwd("C:/Users/Admin/Desktop/Rect Spider 4 to BOA/retto/byTreatment/vate_nadRT_CH_adRT")
+vate_nadRT_CH_adRT_2 <- read.table("vate_nadRT_CH_adRT_2.txt", sep="\t", header=T, quote="")
+vate_nadRT_CH_adRT_3 <- read.table("vate_nadRT_CH_adRT_3.txt", sep="\t", header=T, quote="")
+
+
+setwd("C:/Users/Admin/Desktop/Rect Spider 4 to BOA/retto/byTreatment/vate_nadRTCT_CH")
+vate_nadRTCT_CH_3 <- read.table("vate_nadRTCT_CH_3.txt", sep="\t", header=T, quote="")
+
+setwd("C:/Users/Admin/Desktop/Rect Spider 4 to BOA/retto/byTreatment/vate_nadRTCT_CH_adCT")
+vate_nadRTCT_CH_adCT_3 <-  read.table("vate_nadRTCT_CH_adCT_3.txt", sep="\t", header=T, quote="")
+
+
+setwd("C:/Users/Admin/Desktop/Rect Spider 4 to BOA/retto/byTreatment/vate_nadRTCT_CH_adRT")
+vate_nadRTCT_CH_adRT_2 <-  read.table("vate_nadRTCT_CH_adRT_2.txt", sep="\t", header=T, quote="")
+vate_nadRTCT_CH_adRT_10 <-  read.table("vate_nadRTCT_CH_adRT_10.txt", sep="\t", header=T, quote="")
+vate_nadRTCT_CH_adRT_12 <-  read.table("vate_nadRTCT_CH_adRT_12.txt", sep="\t", header=T, quote="")
+
+
+setwd("C:/Users/Admin/Desktop/Rect Spider 4 to BOA/retto/byTreatment/vate_nadRTCT_CH_adRT_adCT")
+vate_nadRTCT_CH_adRT_adCT_32<-  read.table("vate_nadRTCT_CH_adRT_adCT_32.txt", sep="\t", header=T, quote="")
+vate_nadRTCT_CH_adRT_adCT_33<-  read.table("vate_nadRTCT_CH_adRT_adCT_33.txt", sep="\t", header=T, quote="")
+vate_nadRTCT_CH_adRT_adCT_34<-  read.table("vate_nadRTCT_CH_adRT_adCT_34.txt", sep="\t", header=T, quote="")
+vate_nadRTCT_CH_adRT_adCT_37<-  read.table("vate_nadRTCT_CH_adRT_adCT_37.txt", sep="\t", header=T, quote="")
+vate_nadRTCT_CH_adRT_adCT_40<-  read.table("vate_nadRTCT_CH_adRT_adCT_40.txt", sep="\t", header=T, quote="")
+vate_nadRTCT_CH_adRT_adCT_42<-  read.table("vate_nadRTCT_CH_adRT_adCT_42.txt", sep="\t", header=T, quote="")
+vate_nadRTCT_CH_adRT_adCT_44<-  read.table("vate_nadRTCT_CH_adRT_adCT_44.txt", sep="\t", header=T, quote="")
+
+
+LO_vate_nadRT_CH_adCT_uni<- LO_vate_nadRT_CH_adCT[!duplicated(LO_vate_nadRT_CH_adCT$id),]
+vate_nadRT_CH_adRT_2_uni<- vate_nadRT_CH_adRT_2[!duplicated(vate_nadRT_CH_adRT_2$id),]
+vate_nadRT_CH_adRT_3_uni<- vate_nadRT_CH_adRT_3[!duplicated(vate_nadRT_CH_adRT_3$id),]
+vate_nadRTCT_CH_3_uni<- vate_nadRTCT_CH_3[!duplicated(vate_nadRTCT_CH_3$id),]
+vate_nadRTCT_CH_adCT_3_uni<- vate_nadRTCT_CH_adCT_3[!duplicated(vate_nadRTCT_CH_adCT_3),]
+
+vate_nadRTCT_CH_adRT_2_uni<- vate_nadRTCT_CH_adRT_2[!duplicated(vate_nadRTCT_CH_adRT_2$id),]
+vate_nadRTCT_CH_adRT_10_uni<- vate_nadRTCT_CH_adRT_10[!duplicated(vate_nadRTCT_CH_adRT_10$id),]
+vate_nadRTCT_CH_adRT_12_uni<- vate_nadRTCT_CH_adRT_12[!duplicated(vate_nadRTCT_CH_adRT_12$id),]
+vate_nadRTCT_CH_adRT_adCT_32_uni<- vate_nadRTCT_CH_adRT_adCT_32[!duplicated(vate_nadRTCT_CH_adRT_adCT_32$id),]
+vate_nadRTCT_CH_adRT_adCT_33_uni<- vate_nadRTCT_CH_adRT_adCT_33[!duplicated(vate_nadRTCT_CH_adRT_adCT_33$id),]
+
+vate_nadRTCT_CH_adRT_adCT_34_uni<- vate_nadRTCT_CH_adRT_adCT_34[!duplicated(vate_nadRTCT_CH_adRT_adCT_34),]
+vate_nadRTCT_CH_adRT_adCT_37_uni<- vate_nadRTCT_CH_adRT_adCT_37[!duplicated(vate_nadRTCT_CH_adRT_adCT_37$id),]
+vate_nadRTCT_CH_adRT_adCT_40_uni<- vate_nadRTCT_CH_adRT_adCT_40[!duplicated(vate_nadRTCT_CH_adRT_adCT_40$id),]
+vate_nadRTCT_CH_adRT_adCT_42_uni<- vate_nadRTCT_CH_adRT_adCT_42[!duplicated(vate_nadRTCT_CH_adRT_adCT_42$id),]
+vate_nadRTCT_CH_adRT_adCT_44_uni<- vate_nadRTCT_CH_adRT_adCT_44[!duplicated(vate_nadRTCT_CH_adRT_adCT_44),]
+
+
+tot_LOfiles <- dim(LO_vate_nadRT_CH_adCT_uni)[1]+dim(vate_nadRT_CH_adRT_2_uni)[1]+dim(vate_nadRT_CH_adRT_3_uni)[1]+dim(vate_nadRTCT_CH_3_uni)[1]+dim(vate_nadRTCT_CH_adCT_3_uni)[1]+
+dim(vate_nadRTCT_CH_adRT_2_uni)[1]+dim(vate_nadRTCT_CH_adRT_10_uni)[1]+dim(vate_nadRTCT_CH_adRT_12_uni)[1]+dim(vate_nadRTCT_CH_adRT_adCT_32_uni)[1]+dim(vate_nadRTCT_CH_adRT_adCT_33_uni)[1]+
+dim(vate_nadRTCT_CH_adRT_adCT_34_uni)[1]+dim(vate_nadRTCT_CH_adRT_adCT_37_uni)[1]+dim(vate_nadRTCT_CH_adRT_adCT_40_uni)[1]+dim(vate_nadRTCT_CH_adRT_adCT_42_uni)[1]+dim(vate_nadRTCT_CH_adRT_adCT_44_uni)[1]
+
+
+###############WRITE MISSING PATIENT'S FILES#########################################################################
+
+#setwd("")
+
+write.table(missing_patients_nadRTonly, file = "missing_patients_nadRTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_CH, file = "missing_patients_nadRT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_CH_adRT, file = "missing_patients_nadRT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_CH_adCT, file = "missing_patients_nadRT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_CH_adRTCT, file = "missing_patients_nadRT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_CH_adRT_adCT, file = "missing_patients_nadRT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_nadCTonly, file = "missing_patients_nadRT_nadCTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_nadCT_CH, file = "missing_patients_nadRT_nadCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_nadCT_CH_adRT, file = "missing_patients_nadRT_nadCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_nadCT_CH_adCT, file = "missing_patients_nadRT_nadCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_nadCT_CH_adRTCT, file = "missing_patients_nadRT_nadCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRT_nadCT_CH_adRT_adCT, file = "missing_patients_nadRT_nadCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRTCTonly, file = "missing_patients_nadRTCTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRTCT_CH, file = "missing_patients_nadRTCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRTCT_CH_adRT, file = "missing_patients_nadRTCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRTCT_CH_adCT, file = "missing_patients_nadRTCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRTCT_CH_adRTCT, file = "missing_patients_nadRTCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadRTCT_CH_adRT_adCT, file = "missing_patients_nadRTCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadCTonly, file = "missing_patients_nadCTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadCT_CH, file = "missing_patients_nadCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadCT_CH_adRT, file = "missing_patients_nadCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadCT_CH_adCT, file = "missing_patients_nadCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadCT_CH_adRTCT, file = "missing_patients_nadCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nadCT_CH_adRT_adCT, file = "missing_patients_nadCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_nothing, file = "missing_patients_nothing.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_CHonly, file = "missing_patients_CHonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_CH_adRT, file = "missing_patients_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_CH_adCT, file = "missing_patients_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_CH_adRTCT, file = "missing_patients_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(missing_patients_CH_adRT_adCT, file = "missing_patients_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
