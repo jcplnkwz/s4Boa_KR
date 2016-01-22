@@ -1,0 +1,394 @@
+vate_nadRTonly$DataChirurgia_Seconda[vate_nadRTonly$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRTonly_secondaChirurgia <- vate_nadRTonly[which(!is.na(vate_nadRTonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRTonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRTonly_secondaChirurgia <- vate_nadRTonly_secondaChirurgia[!duplicated(vate_nadRTonly_secondaChirurgia$id),]
+
+dim(vate_nadRTonly_secondaChirurgia)
+
+
+
+
+
+
+vate_nadRT_CH$DataChirurgia_Seconda[vate_nadRT_CH$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_CH_secondaChirurgia <- vate_nadRT_CH[which(!is.na(vate_nadRT_CH$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_CH_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_CH_secondaChirurgia <- vate_nadRT_CH_secondaChirurgia[!duplicated(vate_nadRT_CH_secondaChirurgia$id),]
+
+dim(vate_nadRT_CH_secondaChirurgia)
+
+
+
+
+
+
+vate_nadRT_CH_adRT$DataChirurgia_Seconda[vate_nadRT_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_CH_adRT_secondaChirurgia <- vate_nadRT_CH_adRT[which(!is.na(vate_nadRT_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_CH_adRT_secondaChirurgia <- vate_nadRT_CH_adRT_secondaChirurgia[!duplicated(vate_nadRT_CH_adRT_secondaChirurgia$id),]
+
+
+dim(vate_nadRT_CH_adRT_secondaChirurgia)
+
+
+
+
+vate_nadRT_CH_adCT$DataChirurgia_Seconda[vate_nadRT_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_CH_adCT_secondaChirurgia <- vate_nadRT_CH_adCT[which(!is.na(vate_nadRT_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_CH_adCT_secondaChirurgia <- vate_nadRT_CH_adCT_secondaChirurgia[!duplicated(vate_nadRT_CH_adCT_secondaChirurgia$id),]
+
+
+
+dim(vate_nadRT_CH_adCT_secondaChirurgia)
+
+
+
+vate_nadRT_CH_adRTCT$DataChirurgia_Seconda[vate_nadRT_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_CH_adRTCT_secondaChirurgia <- vate_nadRT_CH_adRTCT[which(!is.na(vate_nadRT_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_CH_adRTCT_secondaChirurgia <- vate_nadRT_CH_adRTCT_secondaChirurgia[!duplicated(vate_nadRT_CH_adRTCT_secondaChirurgia$id),]
+
+
+dim(vate_nadRT_CH_adRTCT_secondaChirurgia)
+
+
+
+
+
+
+
+vate_nadRT_CH_adRT_adCT$DataChirurgia_Seconda[vate_nadRT_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_CH_adRT_adCT_secondaChirurgia <- vate_nadRT_CH_adRT_adCT[which(!is.na(vate_nadRT_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_CH_adRT_adCT_secondaChirurgia <- vate_nadRT_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_nadRT_CH_adRT_adCT_secondaChirurgia$id),]
+
+
+dim(vate_nadRT_CH_adRT_adCT_secondaChirurgia)
+
+
+
+
+
+
+vate_nadRT_nadCTonly$DataChirurgia_Seconda[vate_nadRT_nadCTonly$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_nadCTonly_secondaChirurgia <- vate_nadRT_nadCTonly[which(!is.na(vate_nadRT_nadCTonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_nadCTonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_nadCTonly_secondaChirurgia <- vate_nadRT_nadCTonly_secondaChirurgia[!duplicated(vate_nadRT_nadCTonly_secondaChirurgia$id),]
+
+
+
+dim(vate_nadRT_nadCTonly_secondaChirurgia)
+
+
+
+
+
+
+vate_nadRT_nadCT_CH$DataChirurgia_Seconda[vate_nadRT_nadCT_CH$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_nadCT_CH_secondaChirurgia <- vate_nadRT_nadCT_CH[which(!is.na(vate_nadRT_nadCT_CH$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_nadCT_CH_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_nadCT_CH_secondaChirurgia <- vate_nadRT_nadCT_CH_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_secondaChirurgia$id),]
+
+
+dim(vate_nadRT_nadCT_CH_secondaChirurgia)
+
+
+
+
+
+
+vate_nadRT_nadCT_CH_adRT$DataChirurgia_Seconda[vate_nadRT_nadCT_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_nadCT_CH_adRT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRT[which(!is.na(vate_nadRT_nadCT_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_nadCT_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_nadCT_CH_adRT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRT_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_adRT_secondaChirurgia$id),]
+
+
+dim(vate_nadRT_nadCT_CH_adRT_secondaChirurgia)
+
+
+
+
+
+
+vate_nadRT_nadCT_CH_adCT$DataChirurgia_Seconda[vate_nadRT_nadCT_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_nadCT_CH_adCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adCT[which(!is.na(vate_nadRT_nadCT_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_nadCT_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_nadCT_CH_adCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adCT_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_adCT_secondaChirurgia$id),]
+
+dim(vate_nadRT_nadCT_CH_adCT_secondaChirurgia)
+
+
+
+
+
+vate_nadRT_nadCT_CH_adRTCT$DataChirurgia_Seconda[vate_nadRT_nadCT_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRTCT[which(!is.na(vate_nadRT_nadCT_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia$id),]
+
+
+
+dim(vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia)
+
+
+
+
+
+
+
+
+vate_nadRT_nadCT_CH_adRT_adCT$DataChirurgia_Seconda[vate_nadRT_nadCT_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRT_adCT[which(!is.na(vate_nadRT_nadCT_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia$id),]
+
+dim(vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia)
+
+
+
+
+
+
+
+
+vate_nadRTCTonly$DataChirurgia_Seconda[vate_nadRTCTonly$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRTCTonly_secondaChirurgia <- vate_nadRTCTonly[which(!is.na(vate_nadRTCTonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRTCTonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRTCTonly_secondaChirurgia <- vate_nadRTCTonly_secondaChirurgia[!duplicated(vate_nadRTCTonly_secondaChirurgia$id),]
+
+dim(vate_nadRTCTonly_secondaChirurgia)
+
+
+
+
+
+
+vate_nadRTCT_CH$DataChirurgia_Seconda[vate_nadRTCT_CH$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRTCT_CH_secondaChirurgia <- vate_nadRTCT_CH[which(!is.na(vate_nadRTCT_CH$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRTCT_CH_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRTCT_CH_secondaChirurgia <- vate_nadRTCT_CH_secondaChirurgia[!duplicated(vate_nadRTCT_CH_secondaChirurgia$id),]
+
+
+dim(vate_nadRTCT_CH_secondaChirurgia)
+
+
+
+
+vate_nadRTCT_CH_adRT$DataChirurgia_Seconda[vate_nadRTCT_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRTCT_CH_adRT_secondaChirurgia <- vate_nadRTCT_CH_adRT[which(!is.na(vate_nadRTCT_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRTCT_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRTCT_CH_adRT_secondaChirurgia <- vate_nadRTCT_CH_adRT_secondaChirurgia[!duplicated(vate_nadRTCT_CH_adRT_secondaChirurgia$id),]
+
+dim(vate_nadRTCT_CH_adRT_secondaChirurgia)
+
+
+
+
+
+
+
+
+
+vate_nadRTCT_CH_adCT$DataChirurgia_Seconda[vate_nadRTCT_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRTCT_CH_adCT_secondaChirurgia <- vate_nadRTCT_CH_adCT[which(!is.na(vate_nadRTCT_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRTCT_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRTCT_CH_adCT_secondaChirurgia <- vate_nadRTCT_CH_adCT_secondaChirurgia[!duplicated(vate_nadRTCT_CH_adCT_secondaChirurgia$id),]
+
+
+dim(vate_nadRTCT_CH_adCT_secondaChirurgia)
+
+
+
+
+
+
+
+
+vate_nadRTCT_CH_adRTCT$DataChirurgia_Seconda[vate_nadRTCT_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRTCT_CH_adRTCT_secondaChirurgia <- vate_nadRTCT_CH_adRTCT[which(!is.na(vate_nadRTCT_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRTCT_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRTCT_CH_adRTCT_secondaChirurgia <- vate_nadRTCT_CH_adRTCT_secondaChirurgia[!duplicated(vate_nadRTCT_CH_adRTCT_secondaChirurgia$id),]
+
+
+dim(vate_nadRTCT_CH_adRTCT_secondaChirurgia)
+
+
+
+
+
+
+
+vate_nadRTCT_CH_adRT_adCT$DataChirurgia_Seconda[vate_nadRTCT_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadRTCT_CH_adRT_adCT_secondaChirurgia <- vate_nadRTCT_CH_adRT_adCT[which(!is.na(vate_nadRTCT_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadRTCT_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadRTCT_CH_adRT_adCT_secondaChirurgia <- vate_nadRTCT_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_nadRTCT_CH_adRT_adCT_secondaChirurgia$id),]
+
+dim(vate_nadRTCT_CH_adRT_adCT_secondaChirurgia)
+
+
+
+
+
+
+
+vate_nadCTonly$DataChirurgia_Seconda[vate_nadCTonly$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadCTonly_secondaChirurgia <- vate_nadCTonly[which(!is.na(vate_nadCTonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadCTonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadCTonly_secondaChirurgia <- vate_nadCTonly_secondaChirurgia[!duplicated(vate_nadCTonly_secondaChirurgia$id),]
+
+dim(vate_nadCTonly_secondaChirurgia)
+
+
+
+
+
+
+vate_nadCT_CH$DataChirurgia_Seconda[vate_nadCT_CH$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadCT_CH_secondaChirurgia <- vate_nadCT_CH[which(!is.na(vate_nadCT_CH$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadCT_CH_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadCT_CH_secondaChirurgia <- vate_nadCT_CH_secondaChirurgia[!duplicated(vate_nadCT_CH_secondaChirurgia$id),]
+
+
+dim(vate_nadCT_CH_secondaChirurgia)
+
+
+
+
+
+vate_nadCT_CH_adRT$DataChirurgia_Seconda[vate_nadCT_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadCT_CH_adRT_secondaChirurgia <- vate_nadCT_CH_adRT[which(!is.na(vate_nadCT_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadCT_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadCT_CH_adRT_secondaChirurgia <- vate_nadCT_CH_adRT_secondaChirurgia[!duplicated(vate_nadCT_CH_adRT_secondaChirurgia$id),]
+
+
+dim(vate_nadCT_CH_adRT_secondaChirurgia)
+
+
+
+
+
+
+vate_nadCT_CH_adCT$DataChirurgia_Seconda[vate_nadCT_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadCT_CH_adCT_secondaChirurgia <- vate_nadCT_CH_adCT[which(!is.na(vate_nadCT_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadCT_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadCT_CH_adCT_secondaChirurgia <- vate_nadCT_CH_adCT_secondaChirurgia[!duplicated(vate_nadCT_CH_adCT_secondaChirurgia$id),]
+
+dim(vate_nadCT_CH_adCT_secondaChirurgia)
+
+
+
+
+
+
+
+vate_nadCT_CH_adRTCT$DataChirurgia_Seconda[vate_nadCT_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadCT_CH_adRTCT_secondaChirurgia <- vate_nadCT_CH_adRTCT[which(!is.na(vate_nadCT_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadCT_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadCT_CH_adRTCT_secondaChirurgia <- vate_nadCT_CH_adRTCT_secondaChirurgia[!duplicated(vate_nadCT_CH_adRTCT_secondaChirurgia$id),]
+
+dim(vate_nadCT_CH_adRTCT_secondaChirurgia)
+
+
+
+
+
+
+vate_nadCT_CH_adRT_adCT$DataChirurgia_Seconda[vate_nadCT_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_nadCT_CH_adRT_adCT_secondaChirurgia <- vate_nadCT_CH_adRT_adCT[which(!is.na(vate_nadCT_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nadCT_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nadCT_CH_adRT_adCT_secondaChirurgia <- vate_nadCT_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_nadCT_CH_adRT_adCT_secondaChirurgia$id),]
+
+dim(vate_nadCT_CH_adRT_adCT_secondaChirurgia)
+
+
+
+
+
+vate_nothing$DataChirurgia_Seconda[vate_nothing$DataChirurgia_Seconda == ""] <- NA
+
+vate_nothing_secondaChirurgia <- vate_nothing[which(!is.na(vate_nothing$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_nothing_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_nothing_secondaChirurgia <- vate_nothing_secondaChirurgia[!duplicated(vate_nothing_secondaChirurgia$id),]
+
+
+dim(vate_nothing_secondaChirurgia)
+
+
+
+
+
+vate_CHonly$DataChirurgia_Seconda[vate_CHonly$DataChirurgia_Seconda == ""] <- NA
+
+vate_CHonly_secondaChirurgia <- vate_CHonly[which(!is.na(vate_CHonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_CHonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_CHonly_secondaChirurgia <- vate_CHonly_secondaChirurgia[!duplicated(vate_CHonly_secondaChirurgia$id),]
+
+
+dim(vate_CHonly_secondaChirurgia)
+
+
+
+
+
+
+
+vate_CH_adRT$DataChirurgia_Seconda[vate_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+vate_CH_adRT_secondaChirurgia <- vate_CH_adRT[which(!is.na(vate_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_CH_adRT_secondaChirurgia <- vate_CH_adRT_secondaChirurgia[!duplicated(vate_CH_adRT_secondaChirurgia$id),]
+
+dim(vate_CH_adRT_secondaChirurgia)
+
+
+
+vate_CH_adCT$DataChirurgia_Seconda[vate_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_CH_adCT_secondaChirurgia <- vate_CH_adCT[which(!is.na(vate_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_CH_adCT_secondaChirurgia <- vate_CH_adCT_secondaChirurgia[!duplicated(vate_CH_adCT_secondaChirurgia$id),]
+
+dim(vate_CH_adCT_secondaChirurgia)
+
+
+
+
+
+vate_CH_adRT_adCT$DataChirurgia_Seconda[vate_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+vate_CH_adRT_adCT_secondaChirurgia <- vate_CH_adRT_adCT[which(!is.na(vate_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+names(vate_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+vate_CH_adRT_adCT_secondaChirurgia <- vate_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_CH_adRT_adCT_secondaChirurgia$id),]
+
+dim(vate_CH_adRT_adCT_secondaChirurgia)
+
+
+
+
+
+########################################################################################
