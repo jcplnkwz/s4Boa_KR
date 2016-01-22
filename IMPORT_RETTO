@@ -1,0 +1,2560 @@
+setwd("C:/Users/jacopo/Desktop/KBO/retto")
+vate <- read.table("IMPORT_RETTO.txt", sep="\t", header=T, quote="")
+names(vate)[1] <- "id"
+vate<- vate[order(vate$id),] #ORDER RECORDS BY PATIENT ID
+vate[vate$Data.diagnosi=="",]  <- NA 
+vate <- vate[!is.na(vate$Data.diagnosi) ,] #REMOVE NULL DIagnosis Dates
+
+vate$Sesso[vate$Sesso == "Altro"] <- NA
+levels(vate$Sesso)[2] <- NA
+
+vate$LunghezzaT[vate$LunghezzaT == 99.9] <- NA
+vate$LunghezzaT[vate$LunghezzaT == 999] <- NA
+
+Age <- as.numeric(format(as.Date(Sys.time()),format="%Y"))-as.numeric(format(as.Date(vate$Data.di.nascita,format="%d/%m/%Y"),format="%Y")) #fill Age column from DOB
+col_DOB <- which( colnames(vate)=="Data.di.nascita" )
+vate <- as.data.frame(append(vate, list(Age = Age), after = col_DOB)) #insert Age after DOB column
+C_Staging_Date <- vector(length=nrow(vate))
+col_Data.diagnosi <- which( colnames(vate)=="Data.diagnosi" )
+vate <- as.data.frame(append(vate, list(C_Staging_Date = C_Staging_Date), after = col_Data.diagnosi))
+vate$C_Staging_Date <- vate$Data.diagnosi
+P_Staging_Date <- vector(length=nrow(vate))
+col_pN <- which( colnames(vate)=="pN" )
+vate <- as.data.frame(append(vate, list(P_Staging_Date = P_Staging_Date), after = col_pN))
+vate$P_Staging_Date <- vate$Data.Chirurgia
+Descrizione.Patologia <- vector(length=nrow(vate))
+col_ID.Patologia <- which( colnames(vate)=="ID.Patologia" )
+vate <- as.data.frame(append(vate, list(Descrizione.Patologia = Descrizione.Patologia), after = col_ID.Patologia))
+vate$Descrizione.Patologia <-  ifelse(vate$ID.Patologia=="Eteroplasia del retto", "Eteroplasia del retto",NA  )						
+vate$ID.Patologia <-  ifelse(vate$ID.Patologia=="Eteroplasia del retto", as.numeric("154"),NA  )				
+vate$Distanza.OAI <-  ifelse(vate$Distanza.OAI >=0 ,vate$Distanza.OAI ,NA  )
+	
+	
+# vate_secondaChirurgia <- vate[which(vate$DataChirurgia_Seconda != "NA"),c("id","Inizio.RT","Fine.RT","Dose..RT.T","Dose..RT.N.","Frazionamento.RT","Inizio.CT..NAD.","Fine.CT..NAD.","Tipo.CT..NAD.","N.Cicli..NAD.","Tipo.CT..CONC.","N.Cicli..CONC.","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_secondaChirurgia) <- c("id", "Inizio.RT","Fine.RT","Dose..RT.T","Dose..RT.N.","Frazionamento.RT","Inizio.CT..NAD.","Fine.CT..NAD.","Tipo.CT..NAD.","N.Cicli..NAD.","Tipo.CT..CONC.","N.Cicli..CONC.","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_secondaChirurgia <- vate_secondaChirurgia[!duplicated(vate_secondaChirurgia$id),]
+# vate <- smartbind(vate,vate_secondaChirurgia)
+
+
+
+
+
+vate$cT <-	ifelse(vate$cT=="0", "0",
+			ifelse(vate$cT=="1", "1",
+			ifelse(vate$cT=="1is", "1",
+			ifelse(vate$cT=="2", "2",
+			ifelse(vate$cT=="3", "3",
+			ifelse(vate$cT=="3a", "3a",
+			ifelse(vate$cT=="3b", "3b",
+			ifelse(vate$cT=="3c", "3c",
+			ifelse(vate$cT=="4", "4",
+			ifelse(vate$cT=="4a", "4a",
+			ifelse(vate$cT=="X", "X",
+					 NA  ))))))))))) 
+					 
+vate$cN <-  ifelse(vate$cN=="0", "0",
+			ifelse(vate$cN=="1", "1",
+			ifelse(vate$cN=="2", "2",
+			ifelse(vate$cN=="2a", "2a",
+			ifelse(vate$cN=="2b", "2b",
+			ifelse(vate$cN=="N2a", "2a",
+			ifelse(vate$cN=="+", "+",
+			ifelse(vate$cN=="3", "3",
+			ifelse(vate$cN=="4", "4",
+					 NA  )))))))))	
+					 
+vate$cM <-  ifelse(vate$cM=="0", "0",
+			ifelse(vate$cM=="1", "1",
+			ifelse(vate$cM=="1a", "1a",
+			ifelse(vate$cM=="x", "x",
+					 NA  ))))	
+					 
+vate$C_Staging_Date <- as.Date(as.character(vate$C_Staging_Date), format = "%d/%m/%Y")
+vate$P_Staging_Date <- as.Date(as.character(vate$P_Staging_Date), format = "%d/%m/%Y")
+
+c_staging_ajcc_scale <-  ifelse(vate$C_Staging_Date <= "2002-12-31" , "AJCC 5th",
+			ifelse(vate$C_Staging_Date > "2002-12-31" & vate$C_Staging_Date <= "2010-12-31", "AJCC 6th",
+			ifelse(vate$C_Staging_Date > "2010-12-31" , "AJCC 7th",
+					 NA  )))		 
+col_cstaging <- which( colnames(vate)=="cM" )					 
+vate <- as.data.frame(append(vate, list(c_staging_ajcc_scale = c_staging_ajcc_scale), after = col_cstaging))	
+
+vate$LunghezzaT <- as.numeric(vate$LunghezzaT)/10 #CONVERT TUMOR LENGTH TO cm
+vate$LunghezzaT[vate$LunghezzaT == 0] <- NA
+
+vate$Distanza.OAI <- as.numeric(vate$Distanza.OAI)/10 #CONVERT TUMOR DISTANCE TO cm
+vate$Distanza.OAI[vate$Distanza.OAI == 0] <- NA
+
+vate$IORT <- 0  
+vate$IORT <-  ifelse(vate$Tipo.Chirurgia.T=="MILES+IORT", "si",
+			  ifelse(vate$Tipo.Chirurgia.T=="Res anteriore+ IORT", "si",
+			  ifelse(vate$Dose.IORT !=""  & vate$Dose.IORT != 0, "si",
+			  ifelse(vate$Data.IORT !="" | vate$Data.IORT !=NA, "si",
+										     NA  ))))   # CREATE AND FILL NEW IORT COLUMN BASED ON TIPO.CHIRURGIA.T VALUE AND IORT DATA
+vate$IORT <- as.factor(vate$IORT)
+
+vate$Tipo.Chirurgia.T <- ifelse(vate$Tipo.Chirurgia.T=="Altro", "Altro",
+						             ifelse(vate$Tipo.Chirurgia.T=="Escissione locale", "Escissione locale",
+						             ifelse(vate$Tipo.Chirurgia.T=="Hartmann", "Hartmann",
+						             ifelse(vate$Tipo.Chirurgia.T=="MILES", "APR",
+						             ifelse(vate$Tipo.Chirurgia.T=="MILES+IORT", "APR",
+						             ifelse(vate$Tipo.Chirurgia.T=="Res anteriore", "Res anteriore",
+						             ifelse(vate$Tipo.Chirurgia.T=="Res anteriore+ IORT", "Res anteriore",
+						             ifelse(vate$Tipo.Chirurgia.T=="TEM", "Escissione locale",
+						             ifelse(vate$Tipo.Chirurgia.T=="TME", "TME",
+										             NA  )))))))))   # CONVERT SURGERY VALUES TO COMPLY WITH ONTOLOGY (EURECCA)
+													 
+vate$Tipo.Chirurgia.T <- as.factor(vate$Tipo.Chirurgia.T)	
+
+vate$TipoChirurgiaT_Seconda <- ifelse(vate$TipoChirurgiaT_Seconda=="Altro", "Altro",
+						             ifelse(vate$TipoChirurgiaT_Seconda=="Escissione locale", "Escissione locale",
+						             ifelse(vate$TipoChirurgiaT_Seconda=="Hartmann", "Hartmann",
+						             ifelse(vate$TipoChirurgiaT_Seconda=="MILES", "APR",
+						             ifelse(vate$TipoChirurgiaT_Seconda=="MILES+IORT", "APR",
+						             ifelse(vate$TipoChirurgiaT_Seconda=="Res anteriore", "Res anteriore",
+						             ifelse(vate$TipoChirurgiaT_Seconda=="Res anteriore+ IORT", "Res anteriore",
+						             ifelse(vate$TipoChirurgiaT_Seconda=="TEM", "Escissione locale",
+						             ifelse(vate$TipoChirurgiaT_Seconda=="TME", "TME",
+										             NA  )))))))))   # CONVERT SURGERY VALUES TO COMPLY WITH ONTOLOGY (EURECCA)
+													 
+vate$TipoChirurgiaT_Seconda <- as.factor(vate$TipoChirurgiaT_Seconda)	
+
+vate$pT <-	ifelse(vate$pT=="0", "0",
+			ifelse(vate$pT=="1", "1",
+			ifelse(vate$pT=="1is", "1",
+			ifelse(vate$pT=="2", "2",
+			ifelse(vate$pT=="3", "3",
+			ifelse(vate$pT=="3a", "3a",
+			ifelse(vate$pT=="3b", "3b",
+			ifelse(vate$pT=="3c", "3c",
+			ifelse(vate$pT=="4a", "4a",
+			ifelse(vate$pT=="4b", "4b",
+			ifelse(vate$pT=="4c", "4c",
+			ifelse(vate$pT=="X", "X",
+					 NA  ))))))))))))		
+
+
+vate$pN <-  ifelse(vate$pN=="0", "0",
+			ifelse(vate$pN=="1", "1",
+			ifelse(vate$pN=="1a", "1a",
+			ifelse(vate$pN=="2B", "2B",
+			ifelse(vate$pN=="2a", "2a",
+			ifelse(vate$pN=="2B", "2B",
+			ifelse(vate$pN=="1c", "1c",
+			ifelse(vate$pN=="x", "x",			
+					 NA  ))))))))
+					 
+vate$pM <-  ifelse(vate$pM=="+", "1",
+			ifelse(vate$pM=="0", "0",
+			ifelse(vate$pM=="1a", "1a",
+			ifelse(vate$pM=="1", "1",
+			ifelse(vate$pM=="2", "2",
+			ifelse(vate$pM=="o", "0",
+			ifelse(vate$pM=="x", "X",
+			ifelse(vate$pM=="X", "X",			
+					 NA  ))))))))
+					 
+					 
+					 
+vate$yT <-	ifelse(vate$yT=="0", "0",
+			ifelse(vate$yT=="1", "1",
+			ifelse(vate$yT=="1-2", "1",
+			ifelse(vate$yT=="2", "2",
+			ifelse(vate$yT=="3", "3",
+			ifelse(vate$yT=="3a", "3a",
+			ifelse(vate$yT=="3b", "3b",
+			ifelse(vate$yT=="3c", "3c",
+			ifelse(vate$yT=="4", "4",
+			ifelse(vate$yT=="4a", "4a",
+			ifelse(vate$yT=="4a", "4a",
+			ifelse(vate$yT=="4b", "4b",
+			ifelse(vate$yT=="4c", "4c",
+			ifelse(vate$yT=="T3", "3",
+			ifelse(vate$yT=="x", "X",
+			ifelse(vate$yT=="X", "X",
+					 NA  ))))))))))))))))
+					 
+vate$yN <-  ifelse(vate$yN=="0", "0",
+			ifelse(vate$yN=="1", "1",
+			ifelse(vate$yN=="2", "2",
+			ifelse(vate$yN=="+", "1",
+			ifelse(vate$yN=="3", "3",
+			ifelse(vate$yN=="x", "X",
+					 NA  ))))))	
+					 
+vate$yM <-  ifelse(vate$yM=="  0", "0",
+			ifelse(vate$yM=="0", "0",
+			ifelse(vate$yM=="1", "1",
+			ifelse(vate$yM=="2", "2",
+			ifelse(vate$yM=="x", "X",
+			ifelse(vate$yM=="X", "X",
+					 NA  ))))))
+					 
+p_staging_ajcc_scale <-  ifelse(vate$P_Staging_Date <= "2002-12-31" , "AJCC 5th",
+			ifelse(vate$P_Staging_Date > "2002-12-31" & vate$P_Staging_Date <= "2010-12-31", "AJCC 6th",
+			ifelse(vate$P_Staging_Date > "2010-12-31" , "AJCC 7th",
+					 NA  )))					 
+col_pstaging <- which( colnames(vate)=="pM" )					 
+vate <- as.data.frame(append(vate, list(p_staging_ajcc_scale = p_staging_ajcc_scale), after = col_pstaging))
+
+
+y_staging_ajcc_scale <-  ifelse(vate$C_Staging_Date <= "2002-12-31" , "AJCC 5th",
+			ifelse(vate$C_Staging_Date > "2002-12-31" & vate$C_Staging_Date <= "2010-12-31", "AJCC 6th",
+			ifelse(vate$C_Staging_Date > "2010-12-31" , "AJCC 7th",
+					 NA  )))		 
+col_ystaging <- which( colnames(vate)=="yM" )					 
+vate <- as.data.frame(append(vate, list(y_staging_ajcc_scale = y_staging_ajcc_scale), after = col_ystaging))	
+
+
+########################					 
+					 
+cTajcc5 <- vector(length=nrow(vate))
+cTajcc6 <- vector(length=nrow(vate))
+cTajcc7 <- vector(length=nrow(vate))
+cNajcc5 <- vector(length=nrow(vate))
+cNajcc6 <- vector(length=nrow(vate))
+cNajcc7 <- vector(length=nrow(vate))
+cMajcc5 <- vector(length=nrow(vate))
+cMajcc6 <- vector(length=nrow(vate))
+cMajcc7 <- vector(length=nrow(vate))
+
+
+cStadioajcc5 <- vector(length=nrow(vate))
+cStadioajcc6 <- vector(length=nrow(vate))
+cStadioajcc7 <- vector(length=nrow(vate))
+
+cTajcc5 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 5th", as.character(vate$cT), NA  )
+cTajcc6 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 6th", as.character(vate$cT), NA  )
+cTajcc7 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 7th", as.character(vate$cT), NA  )
+
+cNajcc5 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 5th", as.character(vate$cN), NA  )
+cNajcc6 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 6th", as.character(vate$cN), NA  )
+cNajcc7 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 7th", as.character(vate$cN), NA  )
+
+cMajcc5 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 5th", as.character(vate$cM), NA  )
+cMajcc6 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 6th", as.character(vate$cM), NA  )
+cMajcc7 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 7th", as.character(vate$cM), NA  )
+
+cStadioajcc5 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 5th", as.character(vate$cSTADIO), NA  )
+cStadioajcc6 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 6th", as.character(vate$cSTADIO), NA  )
+cStadioajcc7 <-  ifelse(vate$c_staging_ajcc_scale=="AJCC 7th", as.character(vate$cSTADIO), NA  )
+
+c_staging_ajcc_scale <- which( colnames(vate)=="c_staging_ajcc_scale" )
+vate <- as.data.frame(append(vate, list(cTajcc5 = cTajcc5), after = c_staging_ajcc_scale))
+cTajcc5 <- which( colnames(vate)=="cTajcc5" )
+vate <- as.data.frame(append(vate, list(cTajcc6 = cTajcc6), after = cTajcc5))
+cTajcc6 <- which( colnames(vate)=="cTajcc6" )
+vate <- as.data.frame(append(vate, list(cTajcc7 = cTajcc7), after = cTajcc6))
+
+cTajcc7 <- which( colnames(vate)=="cTajcc7" )
+vate <- as.data.frame(append(vate, list(cNajcc5 = cNajcc5), after = cTajcc7))
+cNajcc5 <- which( colnames(vate)=="cNajcc5" )
+vate <- as.data.frame(append(vate, list(cNajcc6 = cNajcc6), after = cNajcc5))
+cNajcc6 <- which( colnames(vate)=="cNajcc6" )
+vate <- as.data.frame(append(vate, list(cNajcc7 = cNajcc7), after = cNajcc6))
+
+cNajcc7 <- which( colnames(vate)=="cNajcc7" )
+vate <- as.data.frame(append(vate, list(cMajcc5 = cMajcc5), after = cNajcc7))
+cMajcc5 <- which( colnames(vate)=="cMajcc5" )
+vate <- as.data.frame(append(vate, list(cMajcc6 = cMajcc6), after = cMajcc5))
+cMajcc6 <- which( colnames(vate)=="cMajcc6" )
+vate <- as.data.frame(append(vate, list(cMajcc7 = cMajcc7), after = cMajcc6))
+
+cSTADIO <- which( colnames(vate)=="cSTADIO" )
+vate <- as.data.frame(append(vate, list(cStadioajcc5 = cStadioajcc5), after = cSTADIO))
+cStadioajcc5 <- which( colnames(vate)=="cStadioajcc5" )
+vate <- as.data.frame(append(vate, list(cStadioajcc6 = cStadioajcc6), after = cStadioajcc5))
+cStadioajcc6 <- which( colnames(vate)=="cStadioajcc6" )
+vate <- as.data.frame(append(vate, list(cStadioajcc7 = cStadioajcc7), after = cStadioajcc6))
+
+
+#####################
+
+pTajcc5 <- vector(length=nrow(vate))
+pTajcc6 <- vector(length=nrow(vate))
+pTajcc7 <- vector(length=nrow(vate))
+pNajcc5 <- vector(length=nrow(vate))
+pNajcc6 <- vector(length=nrow(vate))
+pNajcc7 <- vector(length=nrow(vate))
+pMajcc5 <- vector(length=nrow(vate))
+pMajcc6 <- vector(length=nrow(vate))
+pMajcc7 <- vector(length=nrow(vate))
+
+pStadioajcc5 <- vector(length=nrow(vate))
+pStadioajcc6 <- vector(length=nrow(vate))
+pStadioajcc7 <- vector(length=nrow(vate))
+
+p_staging_ajcc_scale <- which( colnames(vate)=="p_staging_ajcc_scale" )
+vate <- as.data.frame(append(vate, list(pTajcc5 = pTajcc5), after = p_staging_ajcc_scale))
+pTajcc5 <- which( colnames(vate)=="pTajcc5" )
+vate <- as.data.frame(append(vate, list(pTajcc6 = pTajcc6), after = pTajcc5))
+pTajcc6 <- which( colnames(vate)=="pTajcc6" )
+vate <- as.data.frame(append(vate, list(pTajcc7 = pTajcc7), after = pTajcc6))
+
+pTajcc7 <- which( colnames(vate)=="pTajcc7" )
+vate <- as.data.frame(append(vate, list(pNajcc5 = pNajcc5), after = pTajcc7))
+pNajcc5 <- which( colnames(vate)=="pNajcc5" )
+vate <- as.data.frame(append(vate, list(pNajcc6 = pNajcc6), after = pNajcc5))
+pNajcc6 <- which( colnames(vate)=="pNajcc6" )
+vate <- as.data.frame(append(vate, list(pNajcc7 = pNajcc7), after = pNajcc6))
+
+pNajcc7 <- which( colnames(vate)=="pNajcc7" )
+vate <- as.data.frame(append(vate, list(pMajcc5 = pMajcc5), after = pNajcc7))
+pMajcc5 <- which( colnames(vate)=="pMajcc5" )
+vate <- as.data.frame(append(vate, list(pMajcc6 = pMajcc6), after = pMajcc5))
+pMajcc6 <- which( colnames(vate)=="pMajcc6" )
+vate <- as.data.frame(append(vate, list(pMajcc7 = pMajcc7), after = pMajcc6))
+
+pSTADIO <- which( colnames(vate)=="pSTADIO" )
+vate <- as.data.frame(append(vate, list(pStadioajcc5 = pStadioajcc5), after = pSTADIO))
+pStadioajcc5 <- which( colnames(vate)=="pStadioajcc5" )
+vate <- as.data.frame(append(vate, list(pStadioajcc6 = pStadioajcc6), after = pStadioajcc5))
+pStadioajcc6 <- which( colnames(vate)=="pStadioajcc6" )
+vate <- as.data.frame(append(vate, list(pStadioajcc7 = pStadioajcc7), after = pStadioajcc6))
+
+
+vate$pTajcc5 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 5th", as.character(vate$pT), NA  )
+vate$pTajcc6 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 6th", as.character(vate$pT), NA  )
+vate$pTajcc7 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 7th", as.character(vate$pT), NA  )
+
+vate$pNajcc5 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 5th", as.character(vate$pN), NA  )
+vate$pNajcc6 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 6th", as.character(vate$pN), NA  )
+vate$pNajcc7 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 7th", as.character(vate$pN), NA  )
+
+vate$pMajcc5 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 5th", as.character(vate$pM), NA  )
+vate$pMajcc6 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 6th", as.character(vate$pM), NA  )
+vate$pMajcc7 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 7th", as.character(vate$pM), NA  )
+
+vate$pStadioajcc5 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 5th", as.character(vate$pSTADIO), NA  )
+vate$pStadioajcc6 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 6th", as.character(vate$pSTADIO), NA  )
+vate$pStadioajcc7 <-  ifelse(vate$p_staging_ajcc_scale=="AJCC 7th", as.character(vate$pSTADIO), NA  )
+
+
+##################à
+
+ycTajcc5 <- vector(length=nrow(vate))
+ycTajcc6 <- vector(length=nrow(vate))
+ycTajcc7 <- vector(length=nrow(vate))
+ycNajcc5 <- vector(length=nrow(vate))
+ycNajcc6 <- vector(length=nrow(vate))
+ycNajcc7 <- vector(length=nrow(vate))
+ycMajcc5 <- vector(length=nrow(vate))
+ycMajcc6 <- vector(length=nrow(vate))
+ycMajcc7 <- vector(length=nrow(vate))
+
+ycStadioajcc5 <- vector(length=nrow(vate))
+ycStadioajcc6 <- vector(length=nrow(vate))
+ycStadioajcc7 <- vector(length=nrow(vate))
+
+y_staging_ajcc_scale <- which( colnames(vate)=="y_staging_ajcc_scale" )
+vate <- as.data.frame(append(vate, list(ycTajcc5 = ycTajcc5), after = y_staging_ajcc_scale))
+ycTajcc5 <- which( colnames(vate)=="ycTajcc5" )
+vate <- as.data.frame(append(vate, list(ycTajcc6 = ycTajcc6), after = ycTajcc5))
+ycTajcc6 <- which( colnames(vate)=="ycTajcc6" )
+vate <- as.data.frame(append(vate, list(ycTajcc7 = ycTajcc7), after = ycTajcc6))
+
+ycTajcc7 <- which( colnames(vate)=="ycTajcc7" )
+vate <- as.data.frame(append(vate, list(ycNajcc5 = ycNajcc5), after = ycTajcc7))
+ycNajcc5 <- which( colnames(vate)=="ycNajcc5" )
+vate <- as.data.frame(append(vate, list(ycNajcc6 = ycNajcc6), after = ycNajcc5))
+ycNajcc6 <- which( colnames(vate)=="ycNajcc6" )
+vate <- as.data.frame(append(vate, list(ycNajcc7 = ycNajcc7), after = ycNajcc6))
+
+ycNajcc7 <- which( colnames(vate)=="ycNajcc7" )
+vate <- as.data.frame(append(vate, list(ycMajcc5 = ycMajcc5), after = ycNajcc7))
+ycMajcc5 <- which( colnames(vate)=="ycMajcc5" )
+vate <- as.data.frame(append(vate, list(ycMajcc6 = ycMajcc6), after = ycMajcc5))
+ycMajcc6 <- which( colnames(vate)=="ycMajcc6" )
+vate <- as.data.frame(append(vate, list(ycMajcc7 = ycMajcc7), after = ycMajcc6))
+
+ySTADIO <- which( colnames(vate)=="ySTADIO" )
+vate <- as.data.frame(append(vate, list(ycStadioajcc5 = ycStadioajcc5), after = ySTADIO))
+ycStadioajcc5 <- which( colnames(vate)=="ycStadioajcc5" )
+vate <- as.data.frame(append(vate, list(ycStadioajcc6 = ycStadioajcc6), after = ycStadioajcc5))
+ycStadioajcc6 <- which( colnames(vate)=="ycStadioajcc6" )
+vate <- as.data.frame(append(vate, list(ycStadioajcc7 = ycStadioajcc7), after = ycStadioajcc6))
+
+
+vate$ycTajcc5 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 5th", as.character(vate$yT), NA  )
+vate$ycTajcc6 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 6th", as.character(vate$yT), NA  )
+vate$ycTajcc7 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 7th", as.character(vate$yT), NA  )
+
+vate$ycNajcc5 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 5th", as.character(vate$yN), NA  )
+vate$ycNajcc6 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 6th", as.character(vate$yN), NA  )
+vate$ycNajcc7 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 7th", as.character(vate$yN), NA  )
+
+vate$ycMajcc5 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 5th", as.character(vate$yM), NA  )
+vate$ycMajcc6 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 6th", as.character(vate$yM), NA  )
+vate$ycMajcc7 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 7th", as.character(vate$yM), NA  )
+
+vate$ycStadioajcc5 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 5th", as.character(vate$ySTADIO), NA  )
+vate$ycStadioajcc6 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 6th", as.character(vate$ySTADIO), NA  )
+vate$ycStadioajcc7 <-  ifelse(vate$y_staging_ajcc_scale=="AJCC 7th", as.character(vate$ySTADIO), NA  )
+
+###########
+
+###################### Fill "Sovradosaggio" from RT DOSE columns########################################################################
+
+Sovradosaggio.RT <- vector()
+length(Sovradosaggio.RT) <- nrow(vate)
+Sovradosaggio.RT.C.A <- vector()
+length(Sovradosaggio.RT.C.A) <- nrow(vate)
+
+
+col_Frazionamento.RT <- which( colnames(vate)=="Frazionamento.RT" )
+col_Frazionamento.RT.C.A <- which( colnames(vate)=="Frazionamento.RT.C.A" )
+vate <- as.data.frame(append(vate, list(Sovradosaggio.RT = Sovradosaggio.RT), after = col_Frazionamento.RT))
+vate <- as.data.frame(append(vate, list(Sovradosaggio.RT.C.A = Sovradosaggio.RT.C.A), after = col_Frazionamento.RT.C.A))
+
+
+vate$Sovradosaggio.RT <-  ifelse(vate$Frazionamento.RT=="120+120", as.numeric("1.2"),
+			ifelse(vate$Frazionamento.RT=="180+100", as.numeric("1.0"),
+			ifelse(vate$Frazionamento.RT=="180+90", as.numeric("0.9"),
+					 NA  )))
+
+vate$Frazionamento.RT <-  ifelse(vate$Frazionamento.RT=="120+120", as.numeric("1.2"),
+			ifelse(vate$Frazionamento.RT=="180", as.numeric("1.8"),
+			ifelse(vate$Frazionamento.RT=="180+100", as.numeric("1.8"),
+			ifelse(vate$Frazionamento.RT=="180+90", as.numeric("1.8"),
+			ifelse(vate$Frazionamento.RT=="250", as.numeric("2.5"),
+			ifelse(vate$Frazionamento.RT=="40", as.numeric("4"),
+			ifelse(vate$Frazionamento.RT=="400", as.numeric("4"),
+			ifelse(vate$Frazionamento.RT=="500", as.numeric("5"),
+					 NA  ))))))))
+					 
+					 
+vate$Sovradosaggio.RT.C.A <-  ifelse(vate$Frazionamento.RT.C.A=="120+120", as.numeric("1.2"),
+			ifelse(vate$Frazionamento.RT.C.A=="180+100", as.numeric("1.0"),
+			ifelse(vate$Frazionamento.RT.C.A=="180+120", as.numeric("1.2"),
+			ifelse(vate$Frazionamento.RT.C.A=="180+90", as.numeric("0.9"),
+					 NA  ))))
+					 					
+vate$Frazionamento.RT.C.A <-  ifelse(vate$Frazionamento.RT.C.A=="120+120", as.numeric("1.2"),
+			ifelse(vate$Frazionamento.RT.C.A=="180", as.numeric("1.8"),
+			ifelse(vate$Frazionamento.RT.C.A=="180+100", as.numeric("1.8"),
+			ifelse(vate$Frazionamento.RT.C.A=="180+120", as.numeric("1.8"),
+			ifelse(vate$Frazionamento.RT.C.A=="180+90", as.numeric("1.8"),
+			ifelse(vate$Frazionamento.RT.C.A=="40", as.numeric("4"),
+			ifelse(vate$Frazionamento.RT.C.A=="500", as.numeric("5"),
+					 NA  )))))))
+		 
+					 
+###################### Handle wrong nadRT + adRT rows (burning patients!!!)########################################################################
+					 
+# vate$Dose.RT.T.C.A <-  ifelse(vate$Dose..RT.T != vate$Dose.RT.T.C.A, vate$Dose.RT.T.C.A, NA  )
+# vate$Inizio.RT.C.A <-  ifelse(vate$Dose..RT.T != vate$Dose.RT.T.C.A, format(as.Date(vate$Inizio.RT.C.A,format="%d/%m/%Y"),"%d/%m/%Y"), "NA"  )
+# vate$Fine.RT.C.A <-  ifelse(vate$Dose..RT.T != vate$Dose.RT.T.C.A, format(as.Date(vate$Fine.RT.C.A,format="%d/%m/%Y"),"%d/%m/%Y"), "NA"  )
+# vate$Dose.RT.N..C.A <-  ifelse(vate$Dose..RT.T != vate$Dose.RT.T.C.A, vate$Dose.RT.N..C.A, NA  )
+# vate$Frazionamento.RT.C.A <-  ifelse(vate$Dose..RT.T != vate$Dose.RT.T.C.A, vate$Frazionamento.RT.C.A, NA  )	
+
+############## More on RT doses #####################################################################################################################				 
+
+
+vate$Dose..RT.T <- vate$Dose..RT.T/100	#Change to Gray
+vate$Dose..RT.N. <- vate$Dose..RT.N./100 #Change to Gray			 
+# n_dosi_RT.T <- floor(as.numeric(vate$Dose..RT.T/vate$Frazionamento.RT))
+vate$Dose.RT.T.C.A <- vate$Dose.RT.T.C.A/100  #Change to Gray
+vate$Dose.RT.N..C.A <- vate$Dose.RT.N..C.A/100	#Change to Gray						 
+# n_dosi_RT.T.C.A <- floor(as.numeric(vate$Dose.RT.T.C.A/vate$Frazionamento.RT.C.A))	
+# vate <- as.data.frame(append(vate, list(n_dosi_RT.T = n_dosi_RT.T), after = col_Frazionamento.RT))
+# vate <- as.data.frame(append(vate, list(n_dosi_RT.T.C.A = n_dosi_RT.T.C.A), after = col_Frazionamento.RT.C.A))	
+
+
+vate$Dose..RT.T <-  ifelse(vate$Dose..RT.T=="0.15", as.numeric("15"),
+			ifelse(vate$Dose..RT.T=="0.18", as.numeric("18"),
+			ifelse(vate$Dose..RT.T=="0.24", as.numeric("24"),
+			ifelse(vate$Dose..RT.T=="0.25", as.numeric("25"),
+			ifelse(vate$Dose..RT.T=="0.3", as.numeric("30"),
+			ifelse(vate$Dose..RT.T=="0.36", as.numeric("36"),
+			ifelse(vate$Dose..RT.T=="0.38", as.numeric("38"),
+			ifelse(vate$Dose..RT.T=="0.41", as.numeric("41"),
+			ifelse(vate$Dose..RT.T=="0.43", as.numeric("43"),
+			ifelse(vate$Dose..RT.T=="0.45", as.numeric("45"),
+			ifelse(vate$Dose..RT.T=="0.48", as.numeric("48"),
+			ifelse(vate$Dose..RT.T=="0.49", as.numeric("49"),
+			ifelse(vate$Dose..RT.T=="0.5", as.numeric("50"),
+			ifelse(vate$Dose..RT.T=="0.55", as.numeric("55"),
+			ifelse(vate$Dose..RT.T=="5.5", as.numeric("55"),
+			ifelse(vate$Dose..RT.T=="250", as.numeric("25"),
+			ifelse(vate$Dose..RT.T=="698", as.numeric("69.8"),
+					 vate$Dose..RT.T  )))))))))))))))))
+					 
+					 
+vate$Dose.RT.T.C.A <-  ifelse(vate$Dose.RT.T.C.A=="0.18", as.numeric("18"),
+			ifelse(vate$Dose.RT.T.C.A=="1.8", as.numeric("18"),
+			ifelse(vate$Dose.RT.T.C.A=="0.01", as.numeric("10"),
+					 vate$Dose.RT.T.C.A  )))
+
+
+vate$Dose..RT.N. <-  ifelse(vate$Dose..RT.N.==0.45, 45,vate$Dose..RT.N.)
+					 
+vate$Dose.RT.N..C.A<-  ifelse(vate$Dose.RT.N..C.A==0.01, 1,vate$Dose.RT.N..C.A )
+
+##############################################################################################################################################################
+												 									 
+vate$CausaDecesso <- 0  
+vate$CausaDecesso <-  ifelse(vate$Decesso=="si, per malattia", "Malattia",
+								  ifelse(vate$Decesso=="si, per altre cause", "Altre cause",
+										         NA  ))   # CREATE AND FILL NEW COLUMN BASED ON DECESSO VALUE	
+vate$CausaDecesso <- as.factor(vate$CausaDecesso)												 
+
+  
+vate$Decesso <-  ifelse(vate$Decesso=="si, per malattia", "si",
+							 ifelse(vate$Decesso=="si, per altre cause", "si",
+							 ifelse(vate$Decesso=="No", "No",
+										       NA  ))) # CONVERT DECESSO VALUES TO COMPLY WITH ONTOLOGY (EURECCA)											 
+vate$Decesso <- as.factor(vate$Decesso)  
+
+############################# CONVERT CT PROTOCOLS TO SINGLE AGENTS############################################################
+
+Tipo.CT..NAD.Farmaco1 <- vector(length=nrow(vate))
+Tipo.CT..NAD.Farmaco2 <- vector(length=nrow(vate))
+Tipo.CT..NAD.Farmaco3 <- vector(length=nrow(vate))
+Tipo.CT..NAD.Farmaco4 <- vector(length=nrow(vate))
+
+id.Tipo.CT..NAD.Farmaco1 <- vector(length=nrow(vate))
+id.Tipo.CT..NAD.Farmaco2 <- vector(length=nrow(vate))
+id.Tipo.CT..NAD.Farmaco3 <- vector(length=nrow(vate))
+id.Tipo.CT..NAD.Farmaco4 <- vector(length=nrow(vate))
+
+col_Tipo.CT..NAD. <- which( colnames(vate)=="Tipo.CT..NAD." )
+vate <- as.data.frame(append(vate, list(Tipo.CT..NAD.Farmaco1 = Tipo.CT..NAD.Farmaco1), after = col_Tipo.CT..NAD.))
+col_Tipo.CT..NAD.Farmaco1 <- which( colnames(vate)=="Tipo.CT..NAD.Farmaco1" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..NAD.Farmaco2 = Tipo.CT..NAD.Farmaco2), after = col_Tipo.CT..NAD.Farmaco1))
+col_Tipo.CT..NAD.Farmaco2 <- which( colnames(vate)=="Tipo.CT..NAD.Farmaco2" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..NAD.Farmaco3 = Tipo.CT..NAD.Farmaco3), after = col_Tipo.CT..NAD.Farmaco2))
+col_Tipo.CT..NAD.Farmaco3 <- which( colnames(vate)=="Tipo.CT..NAD.Farmaco3" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..NAD.Farmaco4 = Tipo.CT..NAD.Farmaco4), after = col_Tipo.CT..NAD.Farmaco3))
+
+col_Tipo.CT..NAD.Farmaco4 <- which( colnames(vate)=="Tipo.CT..NAD.Farmaco4" )
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..NAD.Farmaco1 = id.Tipo.CT..NAD.Farmaco1), after = col_Tipo.CT..NAD.Farmaco1))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..NAD.Farmaco2 = id.Tipo.CT..NAD.Farmaco2), after = col_Tipo.CT..NAD.Farmaco2))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..NAD.Farmaco3 = id.Tipo.CT..NAD.Farmaco3), after = col_Tipo.CT..NAD.Farmaco3))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..NAD.Farmaco4 = id.Tipo.CT..NAD.Farmaco4), after = col_Tipo.CT..NAD.Farmaco4))
+
+
+
+vate$Tipo.CT..NAD.Farmaco1 <- ifelse(vate$Tipo.CT..NAD.=="Capecitabina", "Capecitabina",
+							  ifelse(vate$Tipo.CT..NAD.=="CAPOX", "Capecitabina",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFOX", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="PVI", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="TOMOX-R", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..NAD.=="TOMUDEX", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..NAD.=="TOR", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..NAD.=="XELODA", "Capecitabina",
+							  ifelse(vate$Tipo.CT..NAD.=="XELOX", "Capecitabina",
+							  ifelse(vate$Tipo.CT..NAD.=="CAPOX+AVASTIN", "Capecitabina",
+							  ifelse(vate$Tipo.CT..NAD.=="CARBO", "Carboplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="CARBO-TAXOLO", "Carboplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="DE GRAMONT", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="FEM", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFIRI", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFIRI+AVASTIN", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="TOM", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFOX+AVASTIN", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="IRESSA", "Iressa",
+							  ifelse(vate$Tipo.CT..NAD.=="IRESSA+PVI", "Iressa",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR-4", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR-5", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR-R", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR-RT", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="FUMIR", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..NAD.=="XELAC", "Capecitabina",
+							  NA)))))))))))))))))))))))))))
+							  
+vate$Tipo.CT..NAD.Farmaco2 <- ifelse(vate$Tipo.CT..NAD.=="Capecitabina", "Capecitabina",
+							  ifelse(vate$Tipo.CT..NAD.=="CAPOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFOX", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..NAD.=="TOMOX-R", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="XELOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="CAPOX+AVASTIN", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="CARBO-TAXOLO", "Paclitaxel",
+							  ifelse(vate$Tipo.CT..NAD.=="DE GRAMONT", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..NAD.=="FEM", "4-Epidoxotubicina",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFIRI", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFIRI+AVASTIN", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFOX+AVASTIN", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR", "Cisplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR-4", "Cisplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR-5", "Cisplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR-R", "Cisplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="PLAFUR-RT", "Cisplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="FUMIR", "Mitomicina C",
+							  NA))))))))))))))))))
+							  
+vate$Tipo.CT..NAD.Farmaco3 <- ifelse(vate$Tipo.CT..NAD.=="FOLFOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..NAD.=="CAPOX+AVASTIN", "Bevacizumab",
+							  ifelse(vate$Tipo.CT..NAD.=="FEM", "Mitomicina C",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFIRI", "Irinotecano",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFIRI+AVASTIN", "Irinotecano",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFOX+AVASTIN", "Oxaliplatino",
+							  NA))))))
+							  
+							  
+vate$Tipo.CT..NAD.Farmaco4 <- ifelse(vate$Tipo.CT..NAD.=="FOLFIRI+AVASTIN", "Bevacizumab",
+							  ifelse(vate$Tipo.CT..NAD.=="FOLFOX+AVASTIN", "Bevacizumab",
+							  NA))
+							  
+vate$id.Tipo.CT..NAD.Farmaco1 <- ifelse(vate$Tipo.CT..NAD.Farmaco1=="5-Fluorouracile", "2",
+							  ifelse(vate$Tipo.CT..NAD.Farmaco1=="Capecitabina", "0",
+							  NA))
+							  
+vate$id.Tipo.CT..NAD.Farmaco2 <- ifelse(vate$Tipo.CT..NAD.Farmaco2=="Acido Folinico", "3",
+							  ifelse(vate$Tipo.CT..NAD.Farmaco2=="Cisplatino", "6",
+							  ifelse(vate$Tipo.CT..NAD.Farmaco2=="Oxaliplatino", "1",
+							  NA)))
+							  
+vate$id.Tipo.CT..NAD.Farmaco3 <- ifelse(vate$Tipo.CT..NAD.Farmaco3=="Oxaliplatino", "1",
+							  NA)
+							  
+							  
+							  
+######
+
+Tipo.CT..CONC.Farmaco1 <- vector(length=nrow(vate))
+Tipo.CT..CONC.Farmaco2 <- vector(length=nrow(vate))
+Tipo.CT..CONC.Farmaco3 <- vector(length=nrow(vate))
+Tipo.CT..CONC.Farmaco4 <- vector(length=nrow(vate))
+
+id.Tipo.CT..CONC.Farmaco1 <- vector(length=nrow(vate))
+id.Tipo.CT..CONC.Farmaco2 <- vector(length=nrow(vate))
+id.Tipo.CT..CONC.Farmaco3 <- vector(length=nrow(vate))
+id.Tipo.CT..CONC.Farmaco4 <- vector(length=nrow(vate))
+
+col_Tipo.CT..CONC. <- which( colnames(vate)=="Tipo.CT..CONC." )
+vate <- as.data.frame(append(vate, list(Tipo.CT..CONC.Farmaco1 = Tipo.CT..CONC.Farmaco1), after = col_Tipo.CT..CONC.))
+col_Tipo.CT..CONC.Farmaco1 <- which( colnames(vate)=="Tipo.CT..CONC.Farmaco1" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..CONC.Farmaco2 = Tipo.CT..CONC.Farmaco2), after = col_Tipo.CT..CONC.Farmaco1))
+col_Tipo.CT..CONC.Farmaco2 <- which( colnames(vate)=="Tipo.CT..CONC.Farmaco2" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..CONC.Farmaco3 = Tipo.CT..CONC.Farmaco3), after = col_Tipo.CT..CONC.Farmaco2))
+col_Tipo.CT..CONC.Farmaco3 <- which( colnames(vate)=="Tipo.CT..CONC.Farmaco3" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..CONC.Farmaco4 = Tipo.CT..CONC.Farmaco4), after = col_Tipo.CT..CONC.Farmaco3))
+
+col_Tipo.CT..CONC.Farmaco4 <- which( colnames(vate)=="Tipo.CT..CONC.Farmaco4" )
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..CONC.Farmaco1 = id.Tipo.CT..CONC.Farmaco1), after = col_Tipo.CT..CONC.Farmaco1 ))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..CONC.Farmaco2 = id.Tipo.CT..CONC.Farmaco2), after = col_Tipo.CT..CONC.Farmaco2))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..CONC.Farmaco3 = id.Tipo.CT..CONC.Farmaco3), after = col_Tipo.CT..CONC.Farmaco3))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..CONC.Farmaco4 = id.Tipo.CT..CONC.Farmaco4), after = col_Tipo.CT..CONC.Farmaco4))
+
+
+vate$Tipo.CT..CONC.Farmaco1 <- ifelse(vate$Tipo.CT..CONC.=="Capecitabina", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC.=="CAPOX", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFOX", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="PVI", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="TOMOX-R", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..CONC.=="TOMUDEX", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..CONC.=="TOR", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..CONC.=="XELODA", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC.=="XELOX", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC.=="CAPOX+AVASTIN", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC.=="CARBO", "Carboplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="CARBO-TAXOLO", "Carboplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="DE GRAMONT", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="FEM", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFIRI", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFIRI+AVASTIN", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="TOM", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFOX+AVASTIN", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="IRESSA", "Iressa",
+							  ifelse(vate$Tipo.CT..CONC.=="IRESSA+PVI", "Iressa",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR-4", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR-5", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR-R", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR-RT", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="FUMIR", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC.=="XELAC", "Capecitabina",
+							  NA)))))))))))))))))))))))))))
+							  
+vate$Tipo.CT..CONC.Farmaco2 <- ifelse(vate$Tipo.CT..CONC.=="Capecitabina", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC.=="CAPOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFOX", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC.=="TOMOX-R", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="XELOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="CAPOX+AVASTIN", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="CARBO-TAXOLO", "Paclitaxel",
+							  ifelse(vate$Tipo.CT..CONC.=="DE GRAMONT", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC.=="FEM", "4-Epidoxotubicina",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFIRI", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFIRI+AVASTIN", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFOX+AVASTIN", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR-4", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR-5", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR-R", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="PLAFUR-RT", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="FUMIR", "Mitomicina C",
+							  NA))))))))))))))))))
+							  
+vate$Tipo.CT..CONC.Farmaco3 <- ifelse(vate$Tipo.CT..CONC.=="FOLFOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC.=="CAPOX+AVASTIN", "Bevacizumab",
+							  ifelse(vate$Tipo.CT..CONC.=="FEM", "Mitomicina C",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFIRI", "Irinotecano",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFIRI+AVASTIN", "Irinotecano",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFOX+AVASTIN", "Oxaliplatino",
+							  NA))))))
+							  
+							  
+vate$Tipo.CT..CONC.Farmaco4 <- ifelse(vate$Tipo.CT..CONC.=="FOLFIRI+AVASTIN", "Bevacizumab",
+							  ifelse(vate$Tipo.CT..CONC.=="FOLFOX+AVASTIN", "Bevacizumab",
+							  NA))
+							  
+vate$id.Tipo.CT..CONC.Farmaco1 <- ifelse(vate$Tipo.CT..CONC.Farmaco1=="5-Fluorouracile", "2",
+							  ifelse(vate$Tipo.CT..CONC.Farmaco1=="Capecitabina", "0",
+							  ifelse(vate$Tipo.CT..CONC.Farmaco1=="Iressa", "7",
+							  ifelse(vate$Tipo.CT..CONC.Farmaco1=="Raltitrexed", "4",
+							  NA))))
+							  
+vate$id.Tipo.CT..CONC.Farmaco2 <- ifelse(vate$Tipo.CT..CONC.Farmaco2=="Acido Folinico", "3",
+							  ifelse(vate$Tipo.CT..CONC.Farmaco2=="Capecitabina", "0",
+							  ifelse(vate$Tipo.CT..CONC.Farmaco2=="Cisplatino", "6",
+							  ifelse(vate$Tipo.CT..CONC.Farmaco2=="Mitomicina C", "5",
+							  ifelse(vate$Tipo.CT..CONC.Farmaco2=="Oxaliplatino", "1",
+							  NA)))))
+							
+######
+
+Tipo.CT..CONC..C.AFarmaco1 <- vector(length=nrow(vate))
+Tipo.CT..CONC..C.AFarmaco2 <- vector(length=nrow(vate))
+Tipo.CT..CONC..C.AFarmaco3 <- vector(length=nrow(vate))
+Tipo.CT..CONC..C.AFarmaco4 <- vector(length=nrow(vate))
+
+id.Tipo.CT..CONC..C.AFarmaco1 <- vector(length=nrow(vate))
+id.Tipo.CT..CONC..C.AFarmaco2 <- vector(length=nrow(vate))
+id.Tipo.CT..CONC..C.AFarmaco3 <- vector(length=nrow(vate))
+id.Tipo.CT..CONC..C.AFarmaco4 <- vector(length=nrow(vate))
+
+col_Tipo.CT..CONC..C.A <- which( colnames(vate)=="Tipo.CT..CONC..C.A" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..CONC..C.AFarmaco1 = Tipo.CT..CONC..C.AFarmaco1 ), after = col_Tipo.CT..CONC..C.A))
+col_Tipo.CT..CONC..C.AFarmaco1 <- which( colnames(vate)=="Tipo.CT..CONC..C.AFarmaco1" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..CONC..C.AFarmaco2 = Tipo.CT..CONC..C.AFarmaco2), after = col_Tipo.CT..CONC..C.AFarmaco1))
+col_Tipo.CT..CONC..C.AFarmaco2 <- which( colnames(vate)=="Tipo.CT..CONC..C.AFarmaco2" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..CONC..C.AFarmaco3 = Tipo.CT..CONC..C.AFarmaco3), after = col_Tipo.CT..CONC..C.AFarmaco2))
+col_Tipo.CT..CONC..C.AFarmaco3 <- which( colnames(vate)=="Tipo.CT..CONC..C.AFarmaco3" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..CONC..C.AFarmaco4 = Tipo.CT..CONC..C.AFarmaco4), after = col_Tipo.CT..CONC..C.AFarmaco3))
+
+col_Tipo.CT..CONC..C.AFarmaco4 <- which( colnames(vate)=="Tipo.CT..CONC..C.AFarmaco4" )
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..CONC..C.AFarmaco1 = id.Tipo.CT..CONC..C.AFarmaco1), after = col_Tipo.CT..CONC..C.AFarmaco1 ))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..CONC..C.AFarmaco2 = id.Tipo.CT..CONC..C.AFarmaco2), after = col_Tipo.CT..CONC..C.AFarmaco2))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..CONC..C.AFarmaco3 = id.Tipo.CT..CONC..C.AFarmaco3), after = col_Tipo.CT..CONC..C.AFarmaco3))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..CONC..C.AFarmaco4 = id.Tipo.CT..CONC..C.AFarmaco4), after = col_Tipo.CT..CONC..C.AFarmaco4))
+
+
+vate$Tipo.CT..CONC..C.AFarmaco1 <- ifelse(vate$Tipo.CT..CONC..C.A=="Capecitabina", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="CAPOX", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFOX", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PVI", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="TOMOX-R", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="TOMUDEX", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="TOR", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="XELODA", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="XELOX", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="CAPOX+AVASTIN", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="CARBO", "Carboplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="CARBO-TAXOLO", "Carboplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="DE GRAMONT", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FEM", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFIRI", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFIRI+AVASTIN", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="TOM", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFOX+AVASTIN", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="IRESSA", "Iressa",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="IRESSA+PVI", "Iressa",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR-4", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR-5", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR-R", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR-RT", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FUMIR", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="XELAC", "Capecitabina",
+							  NA)))))))))))))))))))))))))))
+							  
+vate$Tipo.CT..CONC..C.AFarmaco2 <- ifelse(vate$Tipo.CT..CONC..C.A=="Capecitabina", "Capecitabina",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="CAPOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFOX", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="TOMOX-R", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="XELOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="CAPOX+AVASTIN", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="CARBO-TAXOLO", "Paclitaxel",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="DE GRAMONT", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FEM", "4-Epidoxotubicina",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFIRI", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFIRI+AVASTIN", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFOX+AVASTIN", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR-4", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR-5", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR-R", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="PLAFUR-RT", "Cisplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FUMIR", "Mitomicina C",
+							  NA))))))))))))))))))
+							  
+vate$Tipo.CT..CONC..C.AFarmaco3 <- ifelse(vate$Tipo.CT..CONC..C.A=="FOLFOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="CAPOX+AVASTIN", "Bevacizumab",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FEM", "Mitomicina C",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFIRI", "Irinotecano",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFIRI+AVASTIN", "Irinotecano",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFOX+AVASTIN", "Oxaliplatino",
+							  NA))))))
+							  
+							  
+vate$Tipo.CT..CONC..C.AFarmaco4 <- ifelse(vate$Tipo.CT..CONC..C.A=="FOLFIRI+AVASTIN", "Bevacizumab",
+							  ifelse(vate$Tipo.CT..CONC..C.A=="FOLFOX+AVASTIN", "Bevacizumab",
+							  NA))
+							  
+							  
+vate$id.Tipo.CT..CONC..C.AFarmaco1 <- ifelse(vate$Tipo.CT..CONC..C.AFarmaco1=="5-Fluorouracile", "2",
+							  ifelse(vate$Tipo.CT..CONC..C.AFarmaco1=="Capecitabina", "0",
+							  ifelse(vate$Tipo.CT..CONC..C.AFarmaco1=="Raltitrexed", "4",
+							  NA)))
+							  
+vate$id.Tipo.CT..CONC..C.AFarmaco2 <- ifelse(vate$Tipo.CT..CONC..C.AFarmaco2=="Acido Folinico", "3",
+							  ifelse(vate$Tipo.CT..CONC..C.AFarmaco2=="Capecitabina", "0",
+							  ifelse(vate$Tipo.CT..CONC..C.AFarmaco2=="Oxaliplatino", "1",
+							  NA)))
+							  
+vate$id.Tipo.CT..CONC..C.AFarmaco3 <- ifelse(vate$Tipo.CT..CONC..C.AFarmaco3=="Oxaliplatino", "1",
+							  NA)
+							  
+###### 
+
+Tipo.CT..ADI.Farmaco1 <- vector(length=nrow(vate))
+Tipo.CT..ADI.Farmaco2 <- vector(length=nrow(vate))
+Tipo.CT..ADI.Farmaco3 <- vector(length=nrow(vate))
+Tipo.CT..ADI.Farmaco4 <- vector(length=nrow(vate))
+
+id.Tipo.CT..ADI.Farmaco1 <- vector(length=nrow(vate))
+id.Tipo.CT..ADI.Farmaco2 <- vector(length=nrow(vate))
+id.Tipo.CT..ADI.Farmaco3 <- vector(length=nrow(vate))
+id.Tipo.CT..ADI.Farmaco4 <- vector(length=nrow(vate))
+
+col_Tipo.CT..ADI. <- which( colnames(vate)=="Tipo.CT..ADI." )
+vate <- as.data.frame(append(vate, list(Tipo.CT..ADI.Farmaco1 = Tipo.CT..ADI.Farmaco1), after = col_Tipo.CT..ADI.))
+col_Tipo.CT..ADI.Farmaco1 <- which( colnames(vate)=="Tipo.CT..ADI.Farmaco1" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..ADI.Farmaco2 = Tipo.CT..ADI.Farmaco2), after = col_Tipo.CT..ADI.Farmaco1))
+col_Tipo.CT..ADI.Farmaco2 <- which( colnames(vate)=="Tipo.CT..ADI.Farmaco2" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..ADI.Farmaco3 = Tipo.CT..ADI.Farmaco3), after = col_Tipo.CT..ADI.Farmaco2))
+col_Tipo.CT..ADI.Farmaco3 <- which( colnames(vate)=="Tipo.CT..ADI.Farmaco3" )
+vate <- as.data.frame(append(vate, list(Tipo.CT..ADI.Farmaco4 = Tipo.CT..ADI.Farmaco4), after = col_Tipo.CT..ADI.Farmaco3))
+
+col_Tipo.CT..ADI.Farmaco4 <- which( colnames(vate)=="Tipo.CT..ADI.Farmaco4" )
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..ADI.Farmaco1 = id.Tipo.CT..ADI.Farmaco1), after = col_Tipo.CT..ADI.Farmaco1 ))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..ADI.Farmaco2 = id.Tipo.CT..ADI.Farmaco2), after = col_Tipo.CT..ADI.Farmaco2))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..ADI.Farmaco3 = id.Tipo.CT..ADI.Farmaco3), after = col_Tipo.CT..ADI.Farmaco3))
+vate <- as.data.frame(append(vate, list(id.Tipo.CT..ADI.Farmaco4 = id.Tipo.CT..ADI.Farmaco4), after = col_Tipo.CT..ADI.Farmaco4))
+
+
+vate$Tipo.CT..ADI.Farmaco1 <- ifelse(vate$Tipo.CT..ADI.=="Capecitabina", "Capecitabina",
+							  ifelse(vate$Tipo.CT..ADI.=="CAPOX", "Capecitabina",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFOX", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="PVI", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="TOMOX-R", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..ADI.=="TOMUDEX", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..ADI.=="TOR", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..ADI.=="XELODA", "Capecitabina",
+							  ifelse(vate$Tipo.CT..ADI.=="XELOX", "Capecitabina",
+							  ifelse(vate$Tipo.CT..ADI.=="CAPOX+AVASTIN", "Capecitabina",
+							  ifelse(vate$Tipo.CT..ADI.=="CARBO", "Carboplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="CARBO-TAXOLO", "Carboplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="DE GRAMONT", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="FEM", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFIRI", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFIRI+AVASTIN", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="TOM", "Raltitrexed",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFOX+AVASTIN", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="IRESSA", "Iressa",
+							  ifelse(vate$Tipo.CT..ADI.=="IRESSA+PVI", "Iressa",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR-4", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR-5", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR-R", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR-RT", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="FUMIR", "5-Fluorouracile",
+							  ifelse(vate$Tipo.CT..ADI.=="XELAC", "Capecitabina",
+							  NA)))))))))))))))))))))))))))
+							  
+vate$Tipo.CT..ADI.Farmaco2 <- ifelse(vate$Tipo.CT..ADI.=="Capecitabina", "Capecitabina",
+							  ifelse(vate$Tipo.CT..ADI.=="CAPOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFOX", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..ADI.=="TOMOX-R", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="XELOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="CAPOX+AVASTIN", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="CARBO-TAXOLO", "Paclitaxel",
+							  ifelse(vate$Tipo.CT..ADI.=="DE GRAMONT", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..ADI.=="FEM", "4-Epidoxotubicina",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFIRI", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFIRI+AVASTIN", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFOX+AVASTIN", "Acido Folinico",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR", "Cisplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR-4", "Cisplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR-5", "Cisplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR-R", "Cisplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="PLAFUR-RT", "Cisplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="FUMIR", "Mitomicina C",
+							  NA))))))))))))))))))
+							  
+vate$Tipo.CT..ADI.Farmaco3 <- ifelse(vate$Tipo.CT..ADI.=="FOLFOX", "Oxaliplatino",
+							  ifelse(vate$Tipo.CT..ADI.=="CAPOX+AVASTIN", "Bevacizumab",
+							  ifelse(vate$Tipo.CT..ADI.=="FEM", "Mitomicina C",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFIRI", "Irinotecano",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFIRI+AVASTIN", "Irinotecano",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFOX+AVASTIN", "Oxaliplatino",
+							  NA))))))
+							  
+							  
+vate$Tipo.CT..ADI.Farmaco4 <- ifelse(vate$Tipo.CT..ADI.=="FOLFIRI+AVASTIN", "Bevacizumab",
+							  ifelse(vate$Tipo.CT..ADI.=="FOLFOX+AVASTIN", "Bevacizumab",
+							  NA))
+							  
+							  
+vate$id.Tipo.CT..ADI.Farmaco1 <- ifelse(vate$Tipo.CT..ADI.Farmaco1=="5-Fluorouracile", "2",
+							  ifelse(vate$Tipo.CT..ADI.Farmaco1=="Capecitabina", "0",
+							  ifelse(vate$Tipo.CT..ADI.Farmaco1=="Raltitrexed", "4",
+							  NA)))
+							  
+vate$id.Tipo.CT..ADI.Farmaco2 <- ifelse(vate$Tipo.CT..ADI.Farmaco2=="4-Epidoxotubicina", "14",
+							  ifelse(vate$Tipo.CT..ADI.Farmaco2=="Acido Folinico", "3",
+							  ifelse(vate$Tipo.CT..ADI.Farmaco2=="Capecitabina", "0",
+							  ifelse(vate$Tipo.CT..ADI.Farmaco2=="Oxaliplatino", "1",
+							  ifelse(vate$Tipo.CT..ADI.Farmaco2=="Paclitaxel", "0",
+							  NA)))))
+							  
+vate$id.Tipo.CT..ADI.Farmaco3 <- ifelse(vate$Tipo.CT..ADI.Farmaco3=="Bevacizumab", "10",
+								ifelse(vate$Tipo.CT..ADI.Farmaco3=="Irinotecano", "8",
+								ifelse(vate$Tipo.CT..ADI.Farmaco3=="Mitomicina C", "5",
+								ifelse(vate$Tipo.CT..ADI.Farmaco3=="Oxaliplatino", "1",
+							  NA))))
+							  
+vate$id.Tipo.CT..ADI.Farmaco4 <- ifelse(vate$Tipo.CT..ADI.Farmaco4=="Bevacizumab", "10",
+							  NA)
+							  
+							  
+################SET MISSING VALUES IN TREATMENT VARIABLES TO NA ############################################################
+
+levels(vate$Tipo.CT..NAD.)[levels(vate$Tipo.CT..NAD.)=="Nessuna"] <- ""
+levels(vate$Tipo.CT..CONC.)[levels(vate$Tipo.CT..CONC.)=="Nessuna"] <- ""
+levels(vate$Tipo.CT..CONC.)[levels(vate$Tipo.CT..CONC.)=="(non definito)"] <- ""
+
+vate$Inizio.RT[vate$Inizio.RT == 0] <- NA
+vate$Inizio.RT[vate$Inizio.RT == ""] <- NA
+vate$Inizio.RT[vate$Inizio.RT == "0"] <- NA
+
+vate$Fine.RT[vate$Fine.RT == 0] <- NA
+vate$Fine.RT[vate$Fine.RT == ""] <- NA
+vate$Fine.RT[vate$Fine.RT == "0"] <- NA
+
+vate$Dose..RT.T[vate$Dose..RT.T == 0] <- NA
+vate$Dose..RT.T[vate$Dose..RT.T == ""] <- NA
+vate$Dose..RT.T[vate$Dose..RT.T == "0"] <- NA
+
+vate$Frazionamento.RT[vate$Frazionamento.RT == 0] <- NA
+vate$Frazionamento.RT[vate$Frazionamento.RT == ""] <- NA
+vate$Frazionamento.RT[vate$Frazionamento.RT == "0"] <- NA
+
+vate$Inizio.CT..NAD.[vate$Inizio.CT..NAD. == 0] <- NA
+vate$Inizio.CT..NAD.[vate$Inizio.CT..NAD. == ""] <- NA
+vate$Inizio.CT..NAD.[vate$Inizio.CT..NAD. == "0"] <- NA
+
+vate$Fine.CT..NAD.[vate$Fine.CT..NAD. == 0] <- NA
+vate$Fine.CT..NAD.[vate$Fine.CT..NAD. == ""] <- NA
+vate$Fine.CT..NAD.[vate$Fine.CT..NAD. == "0"] <- NA
+
+vate$Tipo.CT..NAD.[vate$Tipo.CT..NAD. == 0] <- NA
+vate$Tipo.CT..NAD.[vate$Tipo.CT..NAD. == ""] <- NA
+vate$Tipo.CT..NAD.[vate$Tipo.CT..NAD. == "0"] <- NA
+
+vate$N.Cicli..NAD.[vate$N.Cicli..NAD. == 0] <- NA
+vate$N.Cicli..NAD.[vate$N.Cicli..NAD. == ""] <- NA
+vate$N.Cicli..NAD.[vate$N.Cicli..NAD. == "0"] <- NA
+
+vate$Tipo.CT..CONC.[vate$Tipo.CT..CONC. == 0] <- NA
+vate$Tipo.CT..CONC.[vate$Tipo.CT..CONC. == ""] <- NA
+vate$Tipo.CT..CONC.[vate$Tipo.CT..CONC. == "0"] <- NA
+
+vate$N.Cicli..CONC.[vate$N.Cicli..CONC. == 0] <- NA
+vate$N.Cicli..CONC.[vate$N.Cicli..CONC. == ""] <- NA
+vate$N.Cicli..CONC.[vate$N.Cicli..CONC. == "0"] <- NA
+
+vate$Data.Chirurgia[vate$Data.Chirurgia == 0] <- NA
+vate$Data.Chirurgia[vate$Data.Chirurgia == ""] <- NA
+vate$Data.Chirurgia[vate$Data.Chirurgia == "0"] <- NA
+
+
+vate$Tipo.Chirurgia.T[vate$Tipo.Chirurgia.T == 0] <- NA
+vate$Tipo.Chirurgia.T[vate$Tipo.Chirurgia.T == ""] <- NA
+vate$Tipo.Chirurgia.T[vate$Tipo.Chirurgia.T == "0"] <- NA
+
+vate$Inizio.RT.C.A[vate$Inizio.RT.C.A == 0] <- NA
+vate$Inizio.RT.C.A[vate$Inizio.RT.C.A == ""] <- NA
+vate$Inizio.RT.C.A[vate$Inizio.RT.C.A == "0"] <- NA
+
+vate$Fine.RT.C.A[vate$Fine.RT.C.A == 0] <- NA
+vate$Fine.RT.C.A[vate$Fine.RT.C.A == ""] <- NA
+vate$Fine.RT.C.A[vate$Fine.RT.C.A == "0"] <- NA
+
+vate$Dose.RT.T.C.A[vate$Dose.RT.T.C.A == 0] <- NA
+vate$Dose.RT.T.C.A[vate$Dose.RT.T.C.A == ""] <- NA
+vate$Dose.RT.T.C.A[vate$Dose.RT.T.C.A == "0"] <- NA
+
+vate$Dose.RT.N..C.A[vate$Dose.RT.N..C.A == 0] <- NA
+vate$Dose.RT.N..C.A[vate$Dose.RT.N..C.A == ""] <- NA
+vate$Dose.RT.N..C.A[vate$Dose.RT.N..C.A == "0"] <- NA
+
+vate$Inizio..ADI.[vate$Inizio..ADI. == 0] <- NA
+vate$Inizio..ADI.[vate$Inizio..ADI. == ""] <- NA
+vate$Inizio..ADI.[vate$Inizio..ADI. == "0"] <- NA
+
+vate$Fine..ADI.[vate$Fine..ADI. == 0] <- NA
+vate$Fine..ADI.[vate$Fine..ADI. == ""] <- NA
+vate$Fine..ADI.[vate$Fine..ADI. == "0"] <- NA
+
+vate$Frazionamento.RT.C.A[vate$Frazionamento.RT.C.A == 0] <- NA
+vate$Frazionamento.RT.C.A[vate$Frazionamento.RT.C.A == ""] <- NA
+vate$Frazionamento.RT.C.A[vate$Frazionamento.RT.C.A == "0"] <- NA
+
+vate$Tipo.CT..CONC..C.A[vate$Tipo.CT..CONC..C.A == 0] <- NA
+vate$Tipo.CT..CONC..C.A[vate$Tipo.CT..CONC..C.A == ""] <- NA
+vate$Tipo.CT..CONC..C.A[vate$Tipo.CT..CONC..C.A == "0"] <- NA
+
+vate$N..Cicli..CONC..C.A[vate$N..Cicli..CONC..C.A == 0] <- NA
+vate$N..Cicli..CONC..C.A[vate$N..Cicli..CONC..C.A == ""] <- NA
+vate$N..Cicli..CONC..C.A[vate$N..Cicli..CONC..C.A == "0"] <- NA
+
+vate$Tipo.CT..ADI.[vate$Tipo.CT..ADI. == 0] <- NA
+vate$Tipo.CT..ADI.[vate$Tipo.CT..ADI. == ""] <- NA
+vate$Tipo.CT..ADI.[vate$Tipo.CT..ADI. == "0"] <- NA
+
+vate$N.Cicli..ADI.[vate$N.Cicli..ADI. == 0] <- NA
+vate$N.Cicli..ADI.[vate$N.Cicli..ADI. == ""] <- NA
+vate$N.Cicli..ADI.[vate$N.Cicli..ADI. == "0"] <- NA
+
+################################LOCAL CONTROL, METASTASIS FREE SURVIVAL, DISEASE FREE SURVIVAL AND OVERAL SURVIVAL#################################
+
+time_LR_days <- as.numeric(as.Date(vate$Data.Recidiva.T,format="%d/%m/%Y"),format="%M")-as.numeric(as.Date(vate$Data.Chirurgia,format="%d/%m/%Y"),format="%M")
+time_LR <- floor(as.numeric(time_LR_days / 30))
+col_Recidiva.T <- which( colnames(vate)=="Recidiva.T" )
+vate <- as.data.frame(append(vate, list(time_LR = time_LR), after = col_Recidiva.T))
+
+time_M_days <- as.numeric(as.Date(vate$Data.M,format="%d/%m/%Y"),format="%M")-as.numeric(as.Date(vate$Data.diagnosi,format="%d/%m/%Y"),format="%M")
+time_M <- floor(as.numeric(time_M_days / 30))
+col_Recidiva.M <- which( colnames(vate)=="M" )
+vate <- as.data.frame(append(vate, list(time_M = time_M), after = col_Recidiva.M))
+
+
+time_DFS <- numeric(length = nrow(vate))
+col_Recidiva.DFS <- which( colnames(vate)=="Ripresa.globale.di.malattia..DFS." )
+vate <- as.data.frame(append(vate, list(time_DFS = time_DFS), after = col_Recidiva.DFS))
+vate$time_DFS <- ifelse(vate$Recidiva.T=="si" & vate$M=="si" , pmax(vate$time_LR,vate$time_M,na.rm = TRUE),
+				 ifelse(vate$Recidiva.T=="si" & vate$M=="No" , vate$time_LR,
+				 ifelse(vate$Recidiva.T=="No" & vate$M=="si" , vate$time_M,
+					 NA  )))
+
+time_OS_days <- as.numeric(as.Date(vate$Data.decesso,format="%d/%m/%Y"),format="%M")-as.numeric(as.Date(vate$Data.diagnosi,format="%d/%m/%Y"),format="%M")
+time_OS <- floor(as.numeric(time_OS_days / 30))
+col_Recidiva.OS <- which( colnames(vate)=="Decesso" )
+vate <- as.data.frame(append(vate, list(time_OS = time_OS), after = col_Recidiva.OS))
+
+
+vate$time_M <- ifelse(vate$time_M >= 0, vate$time_M, NA) # PUT negative DMS times to NA
+vate$time_LR <- ifelse(vate$time_LR > 0, vate$time_LR, NA) # PUT negative LR times to NA
+vate$time_DFS <- ifelse(vate$time_DFS > 0, vate$time_DFS, NA) # PUT negative DFS times to NA
+vate$time_OS <- ifelse(vate$time_LR > 0, vate$time_LR, NA) # PUT negative OS times to NA
+
+###################################################### ATTACH FIRT VISIT WIEIGHT AND HEIGHT #################################
+
+#setwd("C:/Users/Admin/Desktop/VATE/17112015")
+vate_hws <- read.table("vate_pesi_altezza.txt", sep="\t", header=T, fill=T)
+vate_hws <- subset(vate_hws, select = - ID.Patologia )
+vate_hws$Data.misura[vate_hws$Data.misura == ""] <- NA	
+vate_hws$Altezza <- as.numeric(vate_hws$Altezza * 100)
+vate_hws <- vate_hws[!is.na(vate_hws$UltimoPeso) | !is.na(vate_hws$Altezza) | !is.na(vate_hws$Data.misura),]
+vate_hws <- vate_hws[vate_hws$UltimoPeso != 0 & vate_hws$Altezza != 0,] 
+vate_hws <- vate_hws[order(vate_hws$id, as.Date(vate_hws$Data.misura,format="%d/%m/%Y")),]
+vate_hws <- cbind(count=sequence(unname(table(vate_hws$id))),vate_hws)
+vate_hws <- vate_hws[vate_hws$count == 1, ]
+vate_hws <- subset(vate_hws, select = - count )
+vate_hws$Altezza  <-  ifelse(vate_hws$Altezza > 10000, as.numeric(vate_hws$Altezza/100), vate_hws$Altezza)
+vate <- merge(vate,vate_hws, by="id", all=TRUE)
+
+col_CEA <- which( colnames(vate)=="CEA" )
+UltimoPeso <- vate$UltimoPeso
+Altezza <- vate$Altezza
+Data.misura <- vate$Data.misura
+vate <- as.data.frame(append(vate, list(Peso = UltimoPeso), after = col_CEA))
+vate <- subset(vate, select = - UltimoPeso )
+col_peso <- which( colnames(vate)=="Peso" )
+vate <- as.data.frame(append(vate, list(ALTEZZA = Altezza), after = col_peso))
+vate <- subset(vate, select = - Altezza )
+col_altezza <- which( colnames(vate)=="ALTEZZA" )
+vate <- as.data.frame(append(vate, list(DataMisura = Data.misura), after = col_altezza))
+vate <- subset(vate, select = - Data.misura )
+
+
+############################################################ ANALYSIS BY TOTAL T DOSE #######################################################################
+#############################################################################################################################################################
+
+NfractionsT <- integer()
+BoostT <- factor()
+NfractionsBoostT <- integer()
+
+#############################################################################################################################################################
+
+nFrazT <- ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ####ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 ,42 ,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 25,
+			   ####ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , 42,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 25,
+			   ####ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==41.4 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 23,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==50.4 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 25,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==4.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) ,25 ,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==0.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 25,
+			   #ifelse(vate$Dose..RT.T==55 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ifelse(vate$Dose..RT.T==55 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 ,25 ,
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==55.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==21.6 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 12,
+			   ####ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 25,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==10.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   
+			   
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) ,25 ,
+			   ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 ,25 ,
+			   #ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 25,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 25,
+			   ####ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==54.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 25,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 25,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   
+			   #ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ####ifelse(vate$Dose..RT.T==37.8 & vate$Dose..RT.N.==37.8 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) ,21 ,
+			   ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) ,21 ,
+			   ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 21,
+			   #ifelse(vate$Dose..RT.T==37.8 & vate$Dose..RT.N.==0.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==24 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==38 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   ifelse(vate$Dose..RT.T==45 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   #ifelse(vate$Dose..RT.T==45 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==55.0  & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1 , 25,
+			   ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==50.4 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==10.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1 , 25,
+			   
+			   #ifelse(vate$Dose..RT.T==48 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   ifelse(vate$Dose..RT.T==25 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , 5,
+			   #ifelse(vate$Dose..RT.T==25 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==25.0 & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , 5,
+			   ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==0  & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , 5,
+			   #ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==0  & vate$Frazionamento.RT==2.5 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==39.6 & is.na(vate$Dose..RT.N.)  & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , NA,
+			   #ifelse(vate$Dose..RT.T==39.6 & is.na(vate$Dose..RT.N.)  & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==40.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==46.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==46.8 & vate$Dose..RT.N.==23.4 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) , 13,
+			   #ifelse(vate$Dose..RT.T==46.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==46.8 & vate$Dose..RT.N.==45.0  & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 25,
+			   
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , NA,
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==58.5 & vate$Dose..RT.N.==45.0  & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 25,
+			   #ifelse(vate$Dose..RT.T==58.5 & vate$Dose..RT.N.==58.5  & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   
+			   
+						NA))))))))))))))))))))))))))))))
+						
+BoostT <- #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , "si",
+			   #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , "si",
+			   #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , "si",
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==41.4 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , "si",
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==50.4 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , "si",
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==4.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==0.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , "si",
+			   #ifelse(vate$Dose..RT.T==55 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ifelse(vate$Dose..RT.T==55 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 ,"si" ,
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , "si",
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==55.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==21.6 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , "si",
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , "si",
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==10.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) ,"no" ,
+			   ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 ,"si" ,
+			   #ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , "si",
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , "si",
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==54.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , "si",
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , "si",
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , "no",
+			   
+			   #ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==37.8 & vate$Dose..RT.N.==37.8 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   #ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , "si",
+			   #ifelse(vate$Dose..RT.T==37.8 & vate$Dose..RT.N.==0.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==24 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==38 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==45 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , "no",
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==55.0  & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1 , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==50.4 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==10.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1 , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==48 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==25 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==25 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==25.0 & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , "no",
+			   #ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==0  & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==0  & vate$Frazionamento.RT==2.5 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   			   
+			   #ifelse(vate$Dose..RT.T==39.6 & is.na(vate$Dose..RT.N.)  & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , NA,
+			   #ifelse(vate$Dose..RT.T==39.6 & is.na(vate$Dose..RT.N.)  & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) ,NA,
+			   
+			   #ifelse(vate$Dose..RT.T==40.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==46.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==46.8 & vate$Dose..RT.N.==23.4 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) , "si",
+			   #ifelse(vate$Dose..RT.T==46.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==46.8 & vate$Dose..RT.N.==45.0  & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , "si",
+			   
+			   
+			   ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , "si",
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , "no",
+			   ifelse(vate$Dose..RT.T==58.5 & vate$Dose..RT.N.==45.0  & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , "si",
+			   #ifelse(vate$Dose..RT.T==58.5 & vate$Dose..RT.N.==58.5  & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   
+						NA))))))))))))))))))))))
+						
+doseBoostT <-  #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 ,NA ,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 0.9,
+			   #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 0.9,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==41.4 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 1.0,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==50.4 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 1.0,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==4.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==0.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 1.0,
+			   #ifelse(vate$Dose..RT.T==55 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ifelse(vate$Dose..RT.T==55 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 ,1.0 ,
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 1.0,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==55.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==21.6 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 1.0,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 1.0,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==10.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 ,0.9 ,
+			   #ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 1.0,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 0.9,
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==54.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 0.9,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 1.0,
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==37.8 & vate$Dose..RT.N.==37.8 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   #ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 0.9,
+			   #ifelse(vate$Dose..RT.T==37.8 & vate$Dose..RT.N.==0.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==24 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==38 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==45 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==55.0  & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1 , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==50.4 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==10.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1 , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==48 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==25 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==25 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==25.0 & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==0  & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==0  & vate$Frazionamento.RT==2.5 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   			   
+			   #ifelse(vate$Dose..RT.T==39.6 & is.na(vate$Dose..RT.N.)  & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , NA,
+			   #ifelse(vate$Dose..RT.T==39.6 & is.na(vate$Dose..RT.N.)  & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==40.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==46.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ifelse(vate$Dose..RT.T==46.8 & vate$Dose..RT.N.==23.4 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) , 1.8,
+			   #ifelse(vate$Dose..RT.T==46.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==46.8 & vate$Dose..RT.N.==45.0  & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 1.8,
+			   
+			   ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 0.9,
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==58.5 & vate$Dose..RT.N.==45.0  & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 0.9,
+			   #ifelse(vate$Dose..RT.T==58.5 & vate$Dose..RT.N.==58.5  & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+						NA))))))))))))))))
+						
+						
+nFrazBoostT <- #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			  #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 ,NA ,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 6,
+			   #ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 6,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==41.4 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 9,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==50.4 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 9,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==4.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==50.4 & vate$Dose..RT.N.==0.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) ,NA,
+			   
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 10,
+			   #ifelse(vate$Dose..RT.T==55 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   ifelse(vate$Dose..RT.T==55 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 ,10 ,
+			   ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 10,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==55.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==21.6 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 10,
+			   #ifelse(vate$Dose..RT.T==55 & vate$Dose..RT.N.==10.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   #ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 ,10 ,
+			   #ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==54 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 9,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 10,
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==54.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 10,
+			   ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1.0 , 9,
+			   #ifelse(vate$Dose..RT.T==54 & vate$Dose..RT.N.==0.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==37.8 & vate$Dose..RT.N.==37.8 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   #ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) ,NA ,
+			   #ifelse(vate$Dose..RT.T==37.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , NA,
+			   #ifelse(vate$Dose..RT.T==37.8 & vate$Dose..RT.N.==0.0 & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==24 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==38 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   #ifelse(vate$Dose..RT.T==45 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==45.0 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==55.0  & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1 , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==50.4 & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==45 & vate$Dose..RT.N.==10.0 & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==1 , NA,
+			   
+			   # ifelse(vate$Dose..RT.T==48 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   # ifelse(vate$Dose..RT.T==25 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   # ifelse(vate$Dose..RT.T==25 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   # ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==25.0 & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   # ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==0  & vate$Frazionamento.RT==5.0 & is.na(vate$Sovradosaggio.RT) , NA,
+			   # ifelse(vate$Dose..RT.T==25 & vate$Dose..RT.N.==0  & vate$Frazionamento.RT==2.5 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   			   
+			   # ifelse(vate$Dose..RT.T==39.6 & is.na(vate$Dose..RT.N.)  & vate$Frazionamento.RT==1.2 & vate$Sovradosaggio.RT==1.2 , NA,
+			   # ifelse(vate$Dose..RT.T==39.6 & is.na(vate$Dose..RT.N.)  & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   # ifelse(vate$Dose..RT.T==40.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   # ifelse(vate$Dose..RT.T==46.8 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==46.8 & vate$Dose..RT.N.==23.4 & vate$Frazionamento.RT==1.8  & is.na(vate$Sovradosaggio.RT) , 13,
+			   #ifelse(vate$Dose..RT.T==46.8 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==46.8 & vate$Dose..RT.N.==45.0  & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , 1,
+			   
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , NA,
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)  & is.na(vate$Sovradosaggio.RT) , NA,
+			   #ifelse(vate$Dose..RT.T==58.5 & is.na(vate$Dose..RT.N.) & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   ifelse(vate$Dose..RT.T==58.5 & vate$Dose..RT.N.==45.0  & vate$Frazionamento.RT==1.8 & vate$Sovradosaggio.RT==0.9 , 15,
+			   #ifelse(vate$Dose..RT.T==58.5 & vate$Dose..RT.N.==58.5  & vate$Frazionamento.RT==1.8 & is.na(vate$Sovradosaggio.RT) , NA,
+			   
+			   
+			   
+			   
+						NA))))))))))))
+						
+
+col_Sovradosaggio.RT <- which( colnames(vate)=="Sovradosaggio.RT" )
+vate <- as.data.frame(append(vate, list(nFrazT = nFrazT), after = col_Sovradosaggio.RT))	
+
+col_nFrazT <- which( colnames(vate)=="nFrazT" )
+vate <- as.data.frame(append(vate, list(BoostT = BoostT), after = col_nFrazT))	
+
+col_BoostT <- which( colnames(vate)=="BoostT" )
+vate <- as.data.frame(append(vate, list(doseBoostT = doseBoostT), after = col_BoostT))	
+
+col_doseBoostT <- which( colnames(vate)=="doseBoostT" )
+vate <- as.data.frame(append(vate, list(nFrazBoostT = nFrazBoostT), after = col_doseBoostT))	
+
+
+###############################################################################################################################################
+
+nFrazT.C.A <-  ifelse(vate$Dose.RT.T.C.A==9.6 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==4 & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A) , 10,
+			ifelse(vate$Dose.RT.T.C.A==18 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A) , 10,
+			ifelse(vate$Dose.RT.T.C.A==19.8 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), 11,
+			ifelse(vate$Dose.RT.T.C.A==20 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==20.4 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, NA,
+			ifelse(vate$Dose.RT.T.C.A==24 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==25.2 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, NA,
+			ifelse(vate$Dose.RT.T.C.A==45 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), 25,
+			ifelse(vate$Dose.RT.T.C.A==45 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), 25,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), 25,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==54 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==0.9, 25,
+			ifelse(vate$Dose.RT.T.C.A==54 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1.2, 25,	
+			ifelse(vate$Dose.RT.T.C.A==55 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1, 25,
+			ifelse(vate$Dose.RT.T.C.A==55 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1, NA,			
+						NA)))))))))))))))))))
+						
+BoostT.C.A <-     ifelse(vate$Dose.RT.T.C.A==9.6 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==4 & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==19.8 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==20 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==20.4 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, "si",
+			ifelse(vate$Dose.RT.T.C.A==24 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==25.2 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, "si",
+			ifelse(vate$Dose.RT.T.C.A==45 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==45 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A),NA ,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, "si",
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==54 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==0.9, "si",
+			ifelse(vate$Dose.RT.T.C.A==54 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1.2, "si",	
+			ifelse(vate$Dose.RT.T.C.A==55 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1, "si",
+			ifelse(vate$Dose.RT.T.C.A==55 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1, "si",	
+   
+						NA)))))))))))))))))))
+						
+doseBoostT.C.A <-  ifelse(vate$Dose.RT.T.C.A==9.6 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==4 & is.na(vate$Sovradosaggio.RT.C.A) ,NA ,
+			ifelse(vate$Dose.RT.T.C.A==18 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==19.8 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A),NA ,
+			ifelse(vate$Dose.RT.T.C.A==20 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==20.4 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, 1.2,
+			ifelse(vate$Dose.RT.T.C.A==24 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==25.2 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, 1.2,
+			ifelse(vate$Dose.RT.T.C.A==45 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==45 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, 1.2,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==54 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==0.9, 0.9,
+			ifelse(vate$Dose.RT.T.C.A==54 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1.2, 0.9,	
+			ifelse(vate$Dose.RT.T.C.A==55 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1, 1,
+			ifelse(vate$Dose.RT.T.C.A==55 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1, 0.9,	
+   
+						NA)))))))))))))))))))
+						
+						
+nFrazBoostT.C.A <- ifelse(vate$Dose.RT.T.C.A==9.6 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==4 & is.na(vate$Sovradosaggio.RT.C.A) ,NA ,
+			ifelse(vate$Dose.RT.T.C.A==18 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==18 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A) , NA,
+			ifelse(vate$Dose.RT.T.C.A==19.8 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==20 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==20.4 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, NA,
+			ifelse(vate$Dose.RT.T.C.A==24 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==25.2 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, NA,
+			ifelse(vate$Dose.RT.T.C.A==45 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==45 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.2 & vate$Sovradosaggio.RT.C.A==1.2, NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & vate$Dose.RT.N..C.A==45 & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==50.4 & is.na(vate$Dose.RT.N..C.A) & is.na(vate$Frazionamento.RT.C.A) & is.na(vate$Sovradosaggio.RT.C.A), NA,
+			ifelse(vate$Dose.RT.T.C.A==54 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==0.9, 10,
+			ifelse(vate$Dose.RT.T.C.A==54 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1.2, NA,	
+			ifelse(vate$Dose.RT.T.C.A==55 & vate$Dose.RT.N..C.A==45 & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1, 10,
+			ifelse(vate$Dose.RT.T.C.A==55 & is.na(vate$Dose.RT.N..C.A) & vate$Frazionamento.RT.C.A==1.8 & vate$Sovradosaggio.RT.C.A==1, NA,	
+
+						NA)))))))))))))))))))
+						
+
+col_Sovradosaggio.RT.C.A <- which( colnames(vate)=="Sovradosaggio.RT.C.A" )
+vate <- as.data.frame(append(vate, list(nFrazT.C.A = nFrazT.C.A), after = col_Sovradosaggio.RT.C.A))	
+
+col_nFrazT.C.A <- which( colnames(vate)=="nFrazT.C.A" )
+vate <- as.data.frame(append(vate, list(BoostT.C.A = BoostT.C.A), after = col_nFrazT.C.A))	
+
+col_BoostT.C.A <- which( colnames(vate)=="BoostT.C.A" )
+vate <- as.data.frame(append(vate, list(doseBoostT.C.A = doseBoostT.C.A), after = col_BoostT.C.A))	
+
+col_doseBoostT.C.A <- which( colnames(vate)=="doseBoostT.C.A" )
+vate <- as.data.frame(append(vate, list(nFrazBoostT.C.A = nFrazBoostT.C.A), after = col_doseBoostT.C.A))
+
+###############################################################################
+
+EsitoNEDFup <- vector(length=nrow(vate))
+col_Data.visita <- which( colnames(vate)=="Data.visita" )
+vate <- as.data.frame(append(vate, list(EsitoNEDFup = EsitoNEDFup), after = col_Data.visita))
+
+EsitoLRFup <- vector(length=nrow(vate))
+col_EsitoNEDFup <- which( colnames(vate)=="EsitoNEDFup" )
+vate <- as.data.frame(append(vate, list(EsitoLRFup = EsitoLRFup), after = col_EsitoNEDFup))
+
+EsitoRRFup <- vector(length=nrow(vate))
+col_EsitoLRFup <- which( colnames(vate)=="EsitoLRFup" )
+vate <- as.data.frame(append(vate, list(EsitoRRFup = EsitoRRFup), after = col_EsitoLRFup))
+
+EsitoMFup <- vector(length=nrow(vate))
+col_EsitoRRFup <- which( colnames(vate)=="EsitoRRFup" )
+vate <- as.data.frame(append(vate, list(EsitoMFup = EsitoMFup), after = col_EsitoRRFup))
+
+Esito2ndTFup <- vector(length=nrow(vate))
+col_EsitoMFup <- which( colnames(vate)=="EsitoMFup" )
+vate <- as.data.frame(append(vate, list(Esito2ndTFup = Esito2ndTFup), after = col_EsitoMFup))
+
+EsitoDeathFup <- vector(length=nrow(vate))
+col_Esito2ndTFup <- which( colnames(vate)=="Esito2ndTFup" )
+vate <- as.data.frame(append(vate, list(EsitoDeathFup = EsitoDeathFup), after = col_Esito2ndTFup))
+
+vate$Sede_Secondo_Tumore[vate$Sede_Secondo_Tumore == ""] <- NA
+vate$Data_Secondo_Tumore[vate$Data_Secondo_Tumore == ""] <- NA
+
+
+
+vate$EsitoLRFup <- ifelse(vate$Recidiva.T.1=="Sì" | vate$Recidiva.T.1=="Sospetta", "Local Recurrence", NA)
+vate$EsitoRRFup <- ifelse(vate$Recidiva.N.1=="Sì" | vate$Recidiva.N.1=="Sospetta", "Regional Recurrence", NA)
+vate$EsitoMFup <- ifelse(vate$Metastasi=="Sì" | vate$Metastasi=="Sospetta", "Metastasis", NA)
+vate$Esito2ndTFup <- ifelse(!is.na(vate$Sede_Secondo_Tumore) | !is.na(vate$Data_Secondo_Tumore), "2nd Tumor", NA)
+vate$EsitoDeathFup <- ifelse(vate$Decesso.1=="Sì, per altre cause" | vate$Decesso.1=="Sì, per malattia", "Death", NA)
+vate$EsitoNEDFup <- ifelse(is.na(vate$EsitoLRFup) & is.na(vate$EsitoRRFup) & is.na(vate$EsitoMFup) & is.na(vate$Esito2ndTFup) & is.na(vate$EsitoDeathFup), NA, NA)
+
+#####################################################
+
+vate$CEA.1[vate$CEA.1 == 0.00] <- NA
+vate$CEA.1[vate$CEA.1 == 999.00] <- NA
+vate$CEA[vate$CEA == 0.00] <- NA
+vate$CEA[vate$CEA == 999.00] <- NA
+
+vate$CA.19.9.1[vate$CA.19.9.1 == 0.00] <- NA
+vate$CA.19.9.1[vate$CA.19.9.1 == 999.00] <- NA
+vate$CA.19.9[vate$CA.19.9 == 0.00] <- NA
+vate$CA.19.9[vate$CA.19.9 == 999.00] <- NA
+
+vate$LunghezzaT[vate$LunghezzaT == 0.00] <- NA
+vate$LunghezzaT[vate$LunghezzaT == 999.00] <- NA
+
+vate$P_Staging_Date <- gsub(pattern = "2020", replacement = "2002", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2030", replacement = "2003", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2090", replacement = "2009", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2091", replacement = "1991", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2092", replacement = "1992", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2093", replacement = "1993", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2094", replacement = "1994", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2095", replacement = "1995", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2096", replacement = "1996", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2097", replacement = "1997", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2098", replacement = "1998", as.character(vate$P_Staging_Date), ignore.case = T)
+vate$P_Staging_Date <- gsub(pattern = "2099", replacement = "1999", as.character(vate$P_Staging_Date), ignore.case = T)
+
+
+vate$Inizio.RT <- gsub(pattern = "2091", replacement = "2001", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2092", replacement = "2002", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2093", replacement = "2003", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2094", replacement = "2004", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2095", replacement = "2005", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2096", replacement = "2006", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2097", replacement = "2007", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2098", replacement = "2008", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2099", replacement = "2009", as.character(vate$Inizio.RT), ignore.case = T)
+vate$Inizio.RT <- gsub(pattern = "2020", replacement = "2002", as.character(vate$Inizio.RT), ignore.case = T)
+
+vate$Fine.RT <- gsub(pattern = "2091", replacement = "2001", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2092", replacement = "2002", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2093", replacement = "2003", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2094", replacement = "2004", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2095", replacement = "2005", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2096", replacement = "2006", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2097", replacement = "2007", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2098", replacement = "2008", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2099", replacement = "2009", as.character(vate$Fine.RT), ignore.case = T)
+vate$Fine.RT <- gsub(pattern = "2020", replacement = "2002", as.character(vate$Fine.RT), ignore.case = T)
+
+vate$Fine.RT.C.A <- gsub(pattern = "2099", replacement = "2009", as.character(vate$Fine.RT), ignore.case = T)
+
+
+vate$Data.Chirurgia <- gsub(pattern = "2091", replacement = "2001", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia <- gsub(pattern = "2092", replacement = "2002", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia <- gsub(pattern = "2093", replacement = "2003", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia <- gsub(pattern = "2094", replacement = "2004", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia <- gsub(pattern = "2095", replacement = "2005", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia <- gsub(pattern = "2096", replacement = "2006", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia <- gsub(pattern = "2097", replacement = "2007", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia<- gsub(pattern = "2098", replacement = "2008", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia <- gsub(pattern = "2099", replacement = "2009", as.character(vate$Data.Chirurgia), ignore.case = T)
+vate$Data.Chirurgia<- gsub(pattern = "2020", replacement = "2002", as.character(vate$Data.Chirurgia), ignore.case = T)
+
+vate$Data.visita <- gsub(pattern = "2091", replacement = "2001", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita <- gsub(pattern = "2092", replacement = "2002", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita <- gsub(pattern = "2093", replacement = "2003", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita <- gsub(pattern = "2094", replacement = "2004", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita <- gsub(pattern = "2095", replacement = "2005", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita <- gsub(pattern = "2096", replacement = "2006", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita <- gsub(pattern = "2097", replacement = "2007", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita<- gsub(pattern = "2098", replacement = "2008", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita <- gsub(pattern = "2099", replacement = "2009", as.character(vate$Data.visita), ignore.case = T)
+vate$Data.visita<- gsub(pattern = "2020", replacement = "2002", as.character(vate$Data.visita), ignore.case = T)
+
+
+vate$Inizio..ADI. <- gsub(pattern = "2091", replacement = "2001", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2092", replacement = "2002", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2093", replacement = "2003", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2094", replacement = "2004", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2095", replacement = "2005", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2096", replacement = "2006", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2097", replacement = "2007", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2098", replacement = "2008", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2099", replacement = "2009", as.character(vate$Inizio..ADI.), ignore.case = T)
+vate$Inizio..ADI. <- gsub(pattern = "2020", replacement = "2002", as.character(vate$Inizio..ADI.), ignore.case = T)
+
+vate$Fine..ADI. <- gsub(pattern = "2091", replacement = "2001", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2092", replacement = "2002", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2093", replacement = "2003", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2094", replacement = "2004", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2095", replacement = "2005", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2096", replacement = "2006", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2097", replacement = "2007", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2098", replacement = "2008", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2099", replacement = "2009", as.character(vate$Fine..ADI.), ignore.case = T)
+vate$Fine..ADI. <- gsub(pattern = "2020", replacement = "2002", as.character(vate$Fine..ADI.), ignore.case = T)
+
+
+
+vate$Age <- ifelse(vate$Age > 0, vate$Age, NA) # PUT negative or zero Age times to NA
+
+dataMarkersFup <- vector(length=nrow(vate))
+dataToxicityFup <- vector(length=nrow(vate))
+
+dataMarkersFup <- ifelse(!is.na(vate$Data.visita),as.character(vate$Data.visita,format="%d/%m/%Y"),NA)
+dataToxicityFup <- ifelse(!is.na(vate$Data.visita),as.character(vate$Data.visita,format="%d/%m/%Y"),NA)
+
+
+vate <- cbind(vate,dataMarkersFup)
+vate <- cbind(vate,dataToxicityFup)
+
+ 
+
+
+#####################################################
+
+
+TipoIstologico <- vector(length=nrow(vate))
+col_Data_istologia <- which( colnames(vate)=="Data_istologia" )
+vate <- as.data.frame(append(vate, list(TipoIstologico = TipoIstologico), after = col_Data_istologia))
+
+GradingIstologia <- vector(length=nrow(vate))
+col_TipoIstologico <- which( colnames(vate)=="TipoIstologico" )
+vate <- as.data.frame(append(vate, list(GradingIstologia = GradingIstologia), after = col_TipoIstologico))
+
+
+vate$GradingIstologia <- ifelse(vate$Istologia=="Adenoca. G1" , "1",
+					   ifelse(vate$Istologia=="Adenoca. G2" , "2",
+					   ifelse(vate$Istologia=="Adenoca. G3" , "3",
+					   ifelse(vate$Istologia=="Ca Duttale invasivo G2" , "2",
+					   ifelse(vate$Istologia=="Ca Squamoso G2" , "2",
+					   ifelse(vate$Istologia=="Ca Squamoso G3" , "3",
+					   ifelse(vate$Istologia=="Ca Squamoso NOS" , "NOS",
+					   ifelse(vate$Istologia=="Adenocarcinoma NOS" , "NOS",
+					   ifelse(vate$Grading_Istologia=="1", "1",
+					   ifelse(vate$Grading_Istologia=="2", "2",
+					   ifelse(vate$Grading_Istologia=="3", "3",
+					   ifelse(vate$Grading_Istologia=="G1", "1",
+					   ifelse(vate$Grading_Istologia=="G2", "2",
+					   ifelse(vate$Grading_Istologia=="G3", "3",
+					   ifelse(vate$Grading_Istologia=="NOS", "NOS",
+					   ifelse(vate$Grading_Istologia=="G2-G3", "3",
+					   ifelse(vate$Grading_Istologia=="4+3", "4",
+					   NA)))))))))))))))))
+
+
+vate$TipoIstologico <- ifelse(vate$Istologia=="Adenoca. G1" , "Adenocarcinoma",
+					   ifelse(vate$Istologia=="Adenoca. G2" , "Adenocarcinoma",
+					   ifelse(vate$Istologia=="Adenoca. G3" , "Adenocarcinoma",
+					   ifelse(vate$Istologia=="Adenocarcinoma a cellule ad anello con castone" , "Adenocarcinoma a cellule ad anello con castone",
+					   ifelse(vate$Istologia=="Adenocarcinoma mucinoso" , "Adenocarcinoma mucinoso",
+					   ifelse(vate$Istologia=="Adenocarcinoma NOS" , "Adenocarcinoma NOS",
+					   ifelse(vate$Istologia=="Ca Duttale invasivo G2" , "Ca Duttale invasivo G2",
+					   ifelse(vate$Istologia=="Ca in situ" , "Ca in situ",
+					   ifelse(vate$Istologia=="Ca indifferenziato" , "Ca indifferenziato",
+					   ifelse(vate$Istologia=="Ca Indifferenziato necrotico" , "Ca Indifferenziato necrotico",
+					   ifelse(vate$Istologia=="Ca Squamoso G2" , "Ca Squamoso",
+					   ifelse(vate$Istologia=="Ca Squamoso G3" , "Ca Squamoso",
+					   ifelse(vate$Istologia=="Ca Squamoso NOS" , "Ca Squamoso",
+					   NA)))))))))))))
+
+##############################################################
+
+
+
+
+
+
+###########################################################
+
+
+#NAD RT ONLY
+
+
+
+vate_nadRT <- vate[(!is.na(vate$Inizio.RT) | !is.na(vate$Fine.RT) | !is.na(vate$Dose..RT.T) | !is.na(vate$Dose..RT.N.) | !is.na(vate$Frazionamento.RT)) & (is.na(vate$Inizio.CT..NAD.) & is.na(vate$Fine.CT..NAD.) & is.na(vate$Tipo.CT..NAD.) & is.na(vate$N.Cicli..NAD.) & is.na(vate$Tipo.CT..CONC.) & is.na(vate$N.Cicli..CONC.)),] 
+
+
+#NAD RT and NAD CT
+vate_nadRTnadCT <- vate[(!is.na(vate$Inizio.RT) | !is.na(vate$Fine.RT) | !is.na(vate$Dose..RT.T) | !is.na(vate$Dose..RT.N.) | !is.na(vate$Frazionamento.RT)) & (!is.na(vate$Inizio.CT..NAD.) | !is.na(vate$Tipo.CT..NAD.) | !is.na(vate$N.Cicli..NAD.) | !is.na(vate$Fine.CT..NAD.)) & (is.na(vate$Tipo.CT..CONC.) & is.na(vate$N.Cicli..CONC.)),] 
+
+#NAD RT-CT
+vate_nadRTCT <- vate[(!is.na(vate$Inizio.RT) | !is.na(vate$Fine.RT) | !is.na(vate$Dose..RT.T) | !is.na(vate$Dose..RT.N.) | !is.na(vate$Frazionamento.RT)) & (is.na(vate$Inizio.CT..NAD.) & is.na(vate$Tipo.CT..NAD.) & is.na(vate$N.Cicli..NAD.) & is.na(vate$Fine.CT..NAD.)) & (!is.na(vate$Tipo.CT..CONC.) | !is.na(vate$N.Cicli..CONC.)),] 
+
+#NAD CT ONLY
+
+vate_nadCT <- vate[(is.na(vate$Inizio.RT) & is.na(vate$Fine.RT) & is.na(vate$Dose..RT.T) & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT)) & (!is.na(vate$Inizio.CT..NAD.) | !is.na(vate$Tipo.CT..NAD.) | !is.na(vate$N.Cicli..NAD.) | !is.na(vate$Fine.CT..NAD.)) & (is.na(vate$Tipo.CT..CONC.) & is.na(vate$N.Cicli..CONC.)),] 
+
+
+#NO NAD
+vate_noNAD <- vate[is.na(vate$Inizio.RT) & is.na(vate$Fine.RT) & is.na(vate$Dose..RT.T) & is.na(vate$Dose..RT.N.) & is.na(vate$Frazionamento.RT) & is.na(vate$Inizio.CT..NAD.) & is.na(vate$Tipo.CT..NAD.) & is.na(vate$N.Cicli..NAD.) & is.na(vate$Fine.CT..NAD.) & is.na(vate$Tipo.CT..CONC.) & is.na(vate$N.Cicli..CONC.),]
+
+
+
+######################################################   ALL TREATMENTS FROM nadRT ##################################################################
+
+#nadRT ONLY
+vate_nadRTonly <- vate_nadRT[is.na(vate_nadRT$Data.Chirurgia) & is.na(vate_nadRT$Tipo.Chirurgia.T) & is.na(vate_nadRT$Inizio.RT.C.A) & is.na(vate_nadRT$Fine.RT.C.A) & is.na(vate_nadRT$Dose.RT.T.C.A) & is.na(vate_nadRT$Dose.RT.N..C.A) & is.na(vate_nadRT$Frazionamento.RT.C.A) & is.na(vate_nadRT$Tipo.CT..CONC..C.A) & is.na(vate_nadRT$N..Cicli..CONC..C.A) & is.na(vate_nadRT$Tipo.CT..ADI.) & is.na(vate_nadRT$N.Cicli..ADI.) & is.na(vate_nadRT$Inizio..ADI.) & is.na(vate_nadRT$Fine..ADI.),]
+
+
+# vate_nadRTonly$DataChirurgia_Seconda[vate_nadRTonly$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRTonly_secondaChirurgia <- vate_nadRTonly[which(!is.na(vate_nadRTonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRTonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRTonly_secondaChirurgia <- vate_nadRTonly_secondaChirurgia[!duplicated(vate_nadRTonly_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRTonly)[1] != 0) { vate_nadRTonly <- cbind(count=sequence(unname(table(vate_nadRTonly$id))),vate_nadRTonly)
+col_id <- which( colnames(vate_nadRTonly)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRTonly)=="Data.visita" ) - 1
+vate_nadRTonly[vate_nadRTonly$count != 1, col_id:col_data_visita]<-NA
+vate_nadRTonly <- subset(vate_nadRTonly, select = - count )
+}
+
+# vate_nadRTonly <- smartbind(vate_nadRTonly,vate_nadRTonly_secondaChirurgia)
+# vate_nadRTonly<- vate_nadRTonly[order(vate_nadRTonly$id),]
+
+#########################
+
+#nadRT-CH
+vate_nadRT_CH <- vate_nadRT[(!is.na(vate_nadRT$Data.Chirurgia) | !is.na(vate_nadRT$Tipo.Chirurgia.T)) & (is.na(vate_nadRT$Inizio.RT.C.A) & is.na(vate_nadRT$Fine.RT.C.A) & is.na(vate_nadRT$Dose.RT.T.C.A) & is.na(vate_nadRT$Dose.RT.N..C.A) & is.na(vate_nadRT$Frazionamento.RT.C.A) & is.na(vate_nadRT$Tipo.CT..CONC..C.A) & is.na(vate_nadRT$N..Cicli..CONC..C.A) & is.na(vate_nadRT$Tipo.CT..ADI.) & is.na(vate_nadRT$N.Cicli..ADI.) & is.na(vate_nadRT$Inizio..ADI.) & is.na(vate_nadRT$Fine..ADI.)),]
+
+# vate_nadRT_CH$DataChirurgia_Seconda[vate_nadRT_CH$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_CH_secondaChirurgia <- vate_nadRT_CH[which(!is.na(vate_nadRT_CH$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_CH_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_CH_secondaChirurgia <- vate_nadRT_CH_secondaChirurgia[!duplicated(vate_nadRT_CH_secondaChirurgia$id),]
+
+
+
+if (dim(vate_nadRT_CH)[1] != 0) { vate_nadRT_CH <- cbind(count=sequence(unname(table(vate_nadRT_CH$id))),vate_nadRT_CH)
+col_id <- which( colnames(vate_nadRT_CH)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_CH)=="Data.visita" ) - 1
+vate_nadRT_CH[vate_nadRT_CH$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_CH <- subset(vate_nadRT_CH, select = - count )
+}
+
+# vate_nadRT_CH <- smartbind(vate_nadRT_CH,vate_nadRT_CH_secondaChirurgia)
+# vate_nadRT_CH<- vate_nadRT_CH[order(vate_nadRT_CH$id),]
+
+#########################
+
+#nadRT-CH-adRT
+vate_nadRT_CH_adRT <- vate_nadRT[(!is.na(vate_nadRT$Data.Chirurgia) | !is.na(vate_nadRT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRT$Inizio.RT.C.A) | !is.na(vate_nadRT$Fine.RT.C.A) | !is.na(vate_nadRT$Dose.RT.T.C.A) | !is.na(vate_nadRT$Dose.RT.N..C.A) | !is.na(vate_nadRT$Frazionamento.RT.C.A)) & (is.na(vate_nadRT$Tipo.CT..CONC..C.A) & is.na(vate_nadRT$N..Cicli..CONC..C.A) & is.na(vate_nadRT$Tipo.CT..ADI.) & is.na(vate_nadRT$N.Cicli..ADI.) & is.na(vate_nadRT$Inizio..ADI.) & is.na(vate_nadRT$Fine..ADI.)),]
+
+
+# vate_nadRT_CH_adRT$DataChirurgia_Seconda[vate_nadRT_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_CH_adRT_secondaChirurgia <- vate_nadRT_CH_adRT[which(!is.na(vate_nadRT_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_CH_adRT_secondaChirurgia <- vate_nadRT_CH_adRT_secondaChirurgia[!duplicated(vate_nadRT_CH_adRT_secondaChirurgia$id),]
+
+
+
+if (dim(vate_nadRT_CH_adRT)[1] != 0) { vate_nadRT_CH_adRT <- cbind(count=sequence(unname(table(vate_nadRT_CH_adRT$id))),vate_nadRT_CH_adRT)
+col_id <- which( colnames(vate_nadRT_CH_adRT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_CH_adRT)=="Data.visita" ) - 1
+vate_nadRT_CH_adRT[vate_nadRT_CH_adRT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_CH_adRT <- subset(vate_nadRT_CH_adRT, select = - count )
+}
+
+# vate_nadRT_CH_adRT <- smartbind(vate_nadRT_CH_adRT,vate_nadRT_CH_adRT_secondaChirurgia)
+# vate_nadRT_CH_adRT<- vate_nadRT_CH_adRT[order(vate_nadRT_CH_adRT$id),]
+
+###########################
+
+#nadRT-CH-adCT
+vate_nadRT_CH_adCT <- vate_nadRT[(!is.na(vate_nadRT$Data.Chirurgia) | !is.na(vate_nadRT$Tipo.Chirurgia.T)) & (is.na(vate_nadRT$Inizio.RT.C.A) & is.na(vate_nadRT$Fine.RT.C.A) & is.na(vate_nadRT$Dose.RT.T.C.A) & is.na(vate_nadRT$Dose.RT.N..C.A) & is.na(vate_nadRT$Frazionamento.RT.C.A) & is.na(vate_nadRT$Tipo.CT..CONC..C.A) & is.na(vate_nadRT$N..Cicli..CONC..C.A)) & (!is.na(vate_nadRT$Tipo.CT..ADI.) | !is.na(vate_nadRT$N.Cicli..ADI.) | !is.na(vate_nadRT$Inizio..ADI.) | !is.na(vate_nadRT$Fine..ADI.)),]
+
+
+# vate_nadRT_CH_adCT$DataChirurgia_Seconda[vate_nadRT_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_CH_adCT_secondaChirurgia <- vate_nadRT_CH_adCT[which(!is.na(vate_nadRT_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_CH_adCT_secondaChirurgia <- vate_nadRT_CH_adCT_secondaChirurgia[!duplicated(vate_nadRT_CH_adCT_secondaChirurgia$id),]
+
+
+
+if (dim(vate_nadRT_CH_adCT)[1] != 0) { vate_nadRT_CH_adCT <- cbind(count=sequence(unname(table(vate_nadRT_CH_adCT$id))),vate_nadRT_CH_adCT)
+col_id <- which( colnames(vate_nadRT_CH_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_CH_adCT)=="Data.visita" ) - 1
+vate_nadRT_CH_adCT[vate_nadRT_CH_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_CH_adCT <- subset(vate_nadRT_CH_adCT, select = - count )
+}
+
+# vate_nadRT_CH_adCT <- smartbind(vate_nadRT_CH_adCT,vate_nadRT_CH_adCT_secondaChirurgia)
+# vate_nadRT_CH_adCT<- vate_nadRT_CH_adCT[order(vate_nadRT_CH_adCT$id),]
+
+
+#################################
+
+#nadRT-CH-adRTCT
+vate_nadRT_CH_adRTCT <- vate_nadRT[(!is.na(vate_nadRT$Data.Chirurgia) | !is.na(vate_nadRT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRT$Inizio.RT.C.A) | !is.na(vate_nadRT$Fine.RT.C.A) | !is.na(vate_nadRT$Dose.RT.T.C.A) | !is.na(vate_nadRT$Dose.RT.N..C.A) | !is.na(vate_nadRT$Frazionamento.RT.C.A)) & (!is.na(vate_nadRT$Tipo.CT..CONC..C.A) | !is.na(vate_nadRT$N..Cicli..CONC..C.A)) & (is.na(vate_nadRT$Tipo.CT..ADI.) & is.na(vate_nadRT$N.Cicli..ADI.) & is.na(vate_nadRT$Inizio..ADI.) & is.na(vate_nadRT$Fine..ADI.)),]
+
+
+# vate_nadRT_CH_adRTCT$DataChirurgia_Seconda[vate_nadRT_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_CH_adRTCT_secondaChirurgia <- vate_nadRT_CH_adRTCT[which(!is.na(vate_nadRT_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_CH_adRTCT_secondaChirurgia <- vate_nadRT_CH_adRTCT_secondaChirurgia[!duplicated(vate_nadRT_CH_adRTCT_secondaChirurgia$id),]
+
+
+
+if (dim(vate_nadRT_CH_adRTCT)[1] != 0) { vate_nadRT_CH_adRTCT <- cbind(count=sequence(unname(table(vate_nadRT_CH_adRTCT$id))),vate_nadRT_CH_adRTCT)
+col_id <- which( colnames(vate_nadRT_CH_adRTCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_CH_adRTCT)=="Data.visita" ) - 1
+vate_nadRT_CH_adRTCT[vate_nadRT_CH_adRTCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_CH_adRTCT <- subset(vate_nadRT_CH_adRTCT, select = - count )
+}
+
+# vate_nadRT_CH_adRTCT <- smartbind(vate_nadRT_CH_adRTCT,vate_nadRT_CH_adRTCT_secondaChirurgia)
+# vate_nadRT_CH_adRTCT<- vate_nadRT_CH_adRTCT[order(vate_nadRT_CH_adRTCT$id),]
+
+##############################################################
+
+#nadRT-CH-adRT-adCT
+vate_nadRT_CH_adRT_adCT <- vate_nadRT[(!is.na(vate_nadRT$Data.Chirurgia) | !is.na(vate_nadRT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRT$Inizio.RT.C.A) | !is.na(vate_nadRT$Fine.RT.C.A) | !is.na(vate_nadRT$Dose.RT.T.C.A) | !is.na(vate_nadRT$Dose.RT.N..C.A) | !is.na(vate_nadRT$Frazionamento.RT.C.A)) & (is.na(vate_nadRT$Tipo.CT..CONC..C.A) & is.na(vate_nadRT$N..Cicli..CONC..C.A)) & (!is.na(vate_nadRT$Tipo.CT..ADI.) | !is.na(vate_nadRT$N.Cicli..ADI.) | !is.na(vate_nadRT$Inizio..ADI.) | !is.na(vate_nadRT$Fine..ADI.)),]
+
+
+# vate_nadRT_CH_adRT_adCT$DataChirurgia_Seconda[vate_nadRT_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_CH_adRT_adCT_secondaChirurgia <- vate_nadRT_CH_adRT_adCT[which(!is.na(vate_nadRT_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_CH_adRT_adCT_secondaChirurgia <- vate_nadRT_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_nadRT_CH_adRT_adCT_secondaChirurgia$id),]
+
+
+
+if (dim(vate_nadRT_CH_adRT_adCT)[1] != 0) { vate_nadRT_CH_adRT_adCT <- cbind(count=sequence(unname(table(vate_nadRT_CH_adRT_adCT$id))),vate_nadRT_CH_adRT_adCT)
+col_id <- which( colnames(vate_nadRT_CH_adRT_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_CH_adRT_adCT)=="Data.visita" ) - 1
+vate_nadRT_CH_adRT_adCT[vate_nadRT_CH_adRT_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_CH_adRT_adCT <- subset(vate_nadRT_CH_adRT_adCT, select = - count )
+}
+
+# vate_nadRT_CH_adRT_adCT <- smartbind(vate_nadRT_CH_adRT_adCT,vate_nadRT_CH_adRT_adCT_secondaChirurgia)
+# vate_nadRT_CH_adRT_adCT<- vate_nadRT_CH_adRT_adCT[order(vate_nadRT_CH_adRT_adCT$id),]
+
+#######################################################################
+
+
+############################################################ ALL TREATMENTS FROM nadRT-nadRT ##################################################################
+
+#nadRT-nadCT ONLY
+vate_nadRT_nadCTonly <- vate_nadRTnadCT[is.na(vate_nadRTnadCT$Data.Chirurgia) & is.na(vate_nadRTnadCT$Tipo.Chirurgia.T) & is.na(vate_nadRTnadCT$Inizio.RT.C.A) & is.na(vate_nadRTnadCT$Fine.RT.C.A) & is.na(vate_nadRTnadCT$Dose.RT.T.C.A) & is.na(vate_nadRTnadCT$Dose.RT.N..C.A) & is.na(vate_nadRTnadCT$Frazionamento.RT.C.A) & is.na(vate_nadRTnadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTnadCT$N..Cicli..CONC..C.A) & is.na(vate_nadRTnadCT$Tipo.CT..ADI.) & is.na(vate_nadRTnadCT$N.Cicli..ADI.) & is.na(vate_nadRTnadCT$Inizio..ADI.) & is.na(vate_nadRTnadCT$Fine..ADI.),]
+
+
+# vate_nadRT_nadCTonly$DataChirurgia_Seconda[vate_nadRT_nadCTonly$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_nadCTonly_secondaChirurgia <- vate_nadRT_nadCTonly[which(!is.na(vate_nadRT_nadCTonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_nadCTonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_nadCTonly_secondaChirurgia <- vate_nadRT_nadCTonly_secondaChirurgia[!duplicated(vate_nadRT_nadCTonly_secondaChirurgia$id),]
+
+
+
+if (dim(vate_nadRT_nadCTonly)[1] != 0) { vate_nadRT_nadCTonly <- cbind(count=sequence(unname(table(vate_nadRT_nadCTonly$id))),vate_nadRT_nadCTonly)
+col_id <- which( colnames(vate_nadRT_nadCTonly)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_nadCTonly)=="Data.visita" ) - 1
+vate_nadRT_nadCTonly[vate_nadRT_nadCTonly$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_nadCTonly <- subset(vate_nadRT_nadCTonly, select = - count )
+}
+
+# vate_nadRT_nadCTonly <- smartbind(vate_nadRT_nadCTonly,vate_nadRT_nadCTonly_secondaChirurgia)
+# vate_nadRT_nadCTonly<- vate_nadRT_nadCTonly[order(vate_nadRT_nadCTonly$id),]
+
+###############################################################################
+
+#nadRT-nadCT-CH
+vate_nadRT_nadCT_CH <- vate_nadRTnadCT[(!is.na(vate_nadRTnadCT$Data.Chirurgia) | !is.na(vate_nadRTnadCT$Tipo.Chirurgia.T)) & (is.na(vate_nadRTnadCT$Inizio.RT.C.A) & is.na(vate_nadRTnadCT$Fine.RT.C.A) & is.na(vate_nadRTnadCT$Dose.RT.T.C.A) & is.na(vate_nadRTnadCT$Dose.RT.N..C.A) & is.na(vate_nadRTnadCT$Frazionamento.RT.C.A) & is.na(vate_nadRTnadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTnadCT$N..Cicli..CONC..C.A) & is.na(vate_nadRTnadCT$Tipo.CT..ADI.) & is.na(vate_nadRTnadCT$N.Cicli..ADI.) & is.na(vate_nadRTnadCT$Inizio..ADI.) & is.na(vate_nadRTnadCT$Fine..ADI.)),]
+
+
+# vate_nadRT_nadCT_CH$DataChirurgia_Seconda[vate_nadRT_nadCT_CH$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_nadCT_CH_secondaChirurgia <- vate_nadRT_nadCT_CH[which(!is.na(vate_nadRT_nadCT_CH$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_nadCT_CH_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_nadCT_CH_secondaChirurgia <- vate_nadRT_nadCT_CH_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRT_nadCT_CH)[1] != 0) { vate_nadRT_nadCT_CH <- cbind(count=sequence(unname(table(vate_nadRT_nadCT_CH$id))),vate_nadRT_nadCT_CH)
+col_id <- which( colnames(vate_nadRT_nadCT_CH)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_nadCT_CH)=="Data.visita" ) - 1
+vate_nadRT_nadCT_CH[vate_nadRT_nadCT_CH$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_nadCT_CH <- subset(vate_nadRT_nadCT_CH, select = - count )
+}
+
+# vate_nadRT_nadCT_CH <- smartbind(vate_nadRT_nadCT_CH,vate_nadRT_nadCT_CH_secondaChirurgia)
+# vate_nadRT_nadCT_CH<- vate_nadRT_nadCT_CH[order(vate_nadRT_nadCT_CH$id),]
+
+###############################################################################
+
+#nadRT-nadCT-CH-adRT
+vate_nadRT_nadCT_CH_adRT <- vate_nadRTnadCT[(!is.na(vate_nadRTnadCT$Data.Chirurgia) | !is.na(vate_nadRTnadCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRTnadCT$Inizio.RT.C.A) | !is.na(vate_nadRTnadCT$Fine.RT.C.A) | !is.na(vate_nadRTnadCT$Dose.RT.T.C.A) | !is.na(vate_nadRTnadCT$Dose.RT.N..C.A) | !is.na(vate_nadRTnadCT$Frazionamento.RT.C.A)) & (is.na(vate_nadRTnadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTnadCT$N..Cicli..CONC..C.A) & is.na(vate_nadRTnadCT$Tipo.CT..ADI.) & is.na(vate_nadRTnadCT$N.Cicli..ADI.) & is.na(vate_nadRTnadCT$Inizio..ADI.) & is.na(vate_nadRTnadCT$Fine..ADI.)),]
+
+
+# vate_nadRT_nadCT_CH_adRT$DataChirurgia_Seconda[vate_nadRT_nadCT_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_nadCT_CH_adRT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRT[which(!is.na(vate_nadRT_nadCT_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_nadCT_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_nadCT_CH_adRT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRT_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_adRT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRT_nadCT_CH_adRT)[1] != 0) { vate_nadRT_nadCT_CH_adRT <- cbind(count=sequence(unname(table(vate_nadRT_nadCT_CH_adRT$id))),vate_nadRT_nadCT_CH_adRT)
+col_id <- which( colnames(vate_nadRT_nadCT_CH_adRT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_nadCT_CH_adRT)=="Data.visita" ) - 1
+vate_nadRT_nadCT_CH_adRT[vate_nadRT_nadCT_CH_adRT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_nadCT_CH_adRT <- subset(vate_nadRT_nadCT_CH_adRT, select = - count )
+}
+
+# vate_nadRT_nadCT_CH_adRT <- smartbind(vate_nadRT_nadCT_CH_adRT,vate_nadRT_nadCT_CH_adRT_secondaChirurgia)
+# vate_nadRT_nadCT_CH_adRT<- vate_nadRT_nadCT_CH_adRT[order(vate_nadRT_nadCT_CH_adRT$id),]
+
+###########################################################
+
+#nadRT-nadCT-CH-adCT
+vate_nadRT_nadCT_CH_adCT <- vate_nadRTnadCT[(!is.na(vate_nadRTnadCT$Data.Chirurgia) | !is.na(vate_nadRTnadCT$Tipo.Chirurgia.T)) & (is.na(vate_nadRTnadCT$Inizio.RT.C.A) & is.na(vate_nadRTnadCT$Fine.RT.C.A) & is.na(vate_nadRTnadCT$Dose.RT.T.C.A) & is.na(vate_nadRTnadCT$Dose.RT.N..C.A) & is.na(vate_nadRTnadCT$Frazionamento.RT.C.A) & is.na(vate_nadRTnadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTnadCT$N..Cicli..CONC..C.A)) & (!is.na(vate_nadRTnadCT$Tipo.CT..ADI.) | !is.na(vate_nadRTnadCT$N.Cicli..ADI.) | !is.na(vate_nadRTnadCT$Inizio..ADI.) | !is.na(vate_nadRTnadCT$Fine..ADI.)),]
+
+
+# vate_nadRT_nadCT_CH_adCT$DataChirurgia_Seconda[vate_nadRT_nadCT_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_nadCT_CH_adCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adCT[which(!is.na(vate_nadRT_nadCT_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_nadCT_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_nadCT_CH_adCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adCT_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_adCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRT_nadCT_CH_adCT)[1] != 0) { vate_nadRT_nadCT_CH_adCT <- cbind(count=sequence(unname(table(vate_nadRT_nadCT_CH_adCT$id))),vate_nadRT_nadCT_CH_adCT)
+col_id <- which( colnames(vate_nadRT_nadCT_CH_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_nadCT_CH_adCT)=="Data.visita" ) - 1
+vate_nadRT_nadCT_CH_adCT[vate_nadRT_nadCT_CH_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_nadCT_CH_adCT <- subset(vate_nadRT_nadCT_CH_adCT, select = - count )
+}
+
+# vate_nadRT_nadCT_CH_adCT <- smartbind(vate_nadRT_nadCT_CH_adCT,vate_nadRT_nadCT_CH_adCT_secondaChirurgia)
+# vate_nadRT_nadCT_CH_adCT<- vate_nadRT_nadCT_CH_adCT[order(vate_nadRT_nadCT_CH_adCT$id),]
+
+#######################################################
+
+#nadRT-nadCT-CH-adRTCT
+vate_nadRT_nadCT_CH_adRTCT <- vate_nadRTnadCT[(!is.na(vate_nadRTnadCT$Data.Chirurgia) | !is.na(vate_nadRTnadCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRTnadCT$Inizio.RT.C.A) | !is.na(vate_nadRTnadCT$Fine.RT.C.A) | !is.na(vate_nadRTnadCT$Dose.RT.T.C.A) | !is.na(vate_nadRTnadCT$Dose.RT.N..C.A) | !is.na(vate_nadRTnadCT$Frazionamento.RT.C.A)) & (!is.na(vate_nadRTnadCT$Tipo.CT..CONC..C.A) | !is.na(vate_nadRTnadCT$N..Cicli..CONC..C.A)) & (is.na(vate_nadRTnadCT$Tipo.CT..ADI.) & is.na(vate_nadRTnadCT$N.Cicli..ADI.) & is.na(vate_nadRTnadCT$Inizio..ADI.) & is.na(vate_nadRTnadCT$Fine..ADI.)),]
+
+
+# vate_nadRT_nadCT_CH_adRTCT$DataChirurgia_Seconda[vate_nadRT_nadCT_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRTCT[which(!is.na(vate_nadRT_nadCT_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRT_nadCT_CH_adRTCT)[1] != 0) { vate_nadRT_nadCT_CH_adRTCT <- cbind(count=sequence(unname(table(vate_nadRT_nadCT_CH_adRTCT$id))),vate_nadRT_nadCT_CH_adRTCT)
+col_id <- which( colnames(vate_nadRT_nadCT_CH_adRTCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_nadCT_CH_adRTCT)=="Data.visita" ) - 1
+vate_nadRT_nadCT_CH_adRTCT[vate_nadRT_nadCT_CH_adRTCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_nadCT_CH_adRTCT <- subset(vate_nadRT_nadCT_CH_adRTCT, select = - count )
+}
+
+# vate_nadRT_nadCT_CH_adRTCT <- smartbind(vate_nadRT_nadCT_CH_adRTCT,vate_nadRT_nadCT_CH_adRTCT_secondaChirurgia)
+# vate_nadRT_nadCT_CH_adRTCT<- vate_nadRT_nadCT_CH_adRTCT[order(vate_nadRT_nadCT_CH_adRTCT$id),]
+
+####################################################
+
+#nadRT-nadCT-CH-adRT-adCT
+vate_nadRT_nadCT_CH_adRT_adCT <- vate_nadRTnadCT[(!is.na(vate_nadRTnadCT$Data.Chirurgia) | !is.na(vate_nadRTnadCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRTnadCT$Inizio.RT.C.A) | !is.na(vate_nadRTnadCT$Fine.RT.C.A) | !is.na(vate_nadRTnadCT$Dose.RT.T.C.A) | !is.na(vate_nadRTnadCT$Dose.RT.N..C.A) | !is.na(vate_nadRTnadCT$Frazionamento.RT.C.A)) & (is.na(vate_nadRTnadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTnadCT$N..Cicli..CONC..C.A)) & (!is.na(vate_nadRTnadCT$Tipo.CT..ADI.) | !is.na(vate_nadRTnadCT$N.Cicli..ADI.) | !is.na(vate_nadRTnadCT$Inizio..ADI.) | !is.na(vate_nadRTnadCT$Fine..ADI.)),]
+
+
+# vate_nadRT_nadCT_CH_adRT_adCT$DataChirurgia_Seconda[vate_nadRT_nadCT_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRT_adCT[which(!is.na(vate_nadRT_nadCT_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia <- vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRT_nadCT_CH_adRT_adCT)[1] != 0) { vate_nadRT_nadCT_CH_adRT_adCT <- cbind(count=sequence(unname(table(vate_nadRT_nadCT_CH_adRT_adCT$id))),vate_nadRT_nadCT_CH_adRT_adCT)
+col_id <- which( colnames(vate_nadRT_nadCT_CH_adRT_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRT_nadCT_CH_adRT_adCT)=="Data.visita" ) - 1
+vate_nadRT_nadCT_CH_adRT_adCT[vate_nadRT_nadCT_CH_adRT_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRT_nadCT_CH_adRT_adCT <- subset(vate_nadRT_nadCT_CH_adRT_adCT, select = - count )
+}
+
+# vate_nadRT_nadCT_CH_adRT_adCT <- smartbind(vate_nadRT_nadCT_CH_adRT_adCT,vate_nadRT_nadCT_CH_adRT_adCT_secondaChirurgia)
+# vate_nadRT_nadCT_CH_adRT_adCT<- vate_nadRT_nadCT_CH_adRT_adCT[order(vate_nadRT_nadCT_CH_adRT_adCT$id),]
+
+###################################################
+
+############################################################ ALL TREATMENTS FROM nadRTCT ##################################################################
+
+
+#nadRTCT ONLY
+vate_nadRTCTonly <- vate_nadRTCT[is.na(vate_nadRTCT$Data.Chirurgia) & is.na(vate_nadRTCT$Tipo.Chirurgia.T) & is.na(vate_nadRTCT$Inizio.RT.C.A) & is.na(vate_nadRTCT$Fine.RT.C.A) & is.na(vate_nadRTCT$Dose.RT.T.C.A) & is.na(vate_nadRTCT$Dose.RT.N..C.A) & is.na(vate_nadRTCT$Frazionamento.RT.C.A) & is.na(vate_nadRTCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTCT$N..Cicli..CONC..C.A) & is.na(vate_nadRTCT$Tipo.CT..ADI.) & is.na(vate_nadRTCT$N.Cicli..ADI.) & is.na(vate_nadRTCT$Inizio..ADI.) & is.na(vate_nadRTCT$Fine..ADI.),]
+
+
+# vate_nadRTCTonly$DataChirurgia_Seconda[vate_nadRTCTonly$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRTCTonly_secondaChirurgia <- vate_nadRTCTonly[which(!is.na(vate_nadRTCTonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRTCTonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRTCTonly_secondaChirurgia <- vate_nadRTCTonly_secondaChirurgia[!duplicated(vate_nadRTCTonly_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRTCTonly)[1] != 0) { vate_nadRTCTonly <- cbind(count=sequence(unname(table(vate_nadRTCTonly$id))),vate_nadRTCTonly)
+col_id <- which( colnames(vate_nadRTCTonly)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRTCTonly)=="Data.visita" ) - 1
+vate_nadRTCTonly[vate_nadRTCTonly$count != 1, col_id:col_data_visita]<-NA
+vate_nadRTCTonly <- subset(vate_nadRTCTonly, select = - count )
+}
+
+# vate_nadRTCTonly <- smartbind(vate_nadRTCTonly,vate_nadRTCTonly_secondaChirurgia)
+# vate_nadRTCTonly<- vate_nadRTCTonly[order(vate_nadRTCTonly$id),]
+
+#############################################
+
+#nadRTCT-CH
+vate_nadRTCT_CH <- vate_nadRTCT[(!is.na(vate_nadRTCT$Data.Chirurgia) | !is.na(vate_nadRTCT$Tipo.Chirurgia.T)) & (is.na(vate_nadRTCT$Inizio.RT.C.A) & is.na(vate_nadRTCT$Fine.RT.C.A) & is.na(vate_nadRTCT$Dose.RT.T.C.A) & is.na(vate_nadRTCT$Dose.RT.N..C.A) & is.na(vate_nadRTCT$Frazionamento.RT.C.A) & is.na(vate_nadRTCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTCT$N..Cicli..CONC..C.A) & is.na(vate_nadRTCT$Tipo.CT..ADI.) & is.na(vate_nadRTCT$N.Cicli..ADI.) & is.na(vate_nadRTCT$Inizio..ADI.) & is.na(vate_nadRTCT$Fine..ADI.)),]
+
+# vate_nadRTCT_CH$DataChirurgia_Seconda[vate_nadRTCT_CH$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRTCT_CH_secondaChirurgia <- vate_nadRTCT_CH[which(!is.na(vate_nadRTCT_CH$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRTCT_CH_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRTCT_CH_secondaChirurgia <- vate_nadRTCT_CH_secondaChirurgia[!duplicated(vate_nadRTCT_CH_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRTCT_CH)[1] != 0) { vate_nadRTCT_CH <- cbind(count=sequence(unname(table(vate_nadRTCT_CH$id))),vate_nadRTCT_CH)
+col_id <- which( colnames(vate_nadRTCT_CH)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRTCT_CH)=="Data.visita" ) - 1
+vate_nadRTCT_CH[vate_nadRTCT_CH$count != 1, col_id:col_data_visita]<-NA
+vate_nadRTCT_CH <- subset(vate_nadRTCT_CH, select = - count )
+}
+
+# vate_nadRTCT_CH <- smartbind(vate_nadRTCT_CH,vate_nadRTCT_CH_secondaChirurgia)
+# vate_nadRTCT_CH<- vate_nadRTCT_CH[order(vate_nadRTCT_CH$id),]
+
+######################################################
+
+#nadRTCT-CH-adRT
+vate_nadRTCT_CH_adRT <- vate_nadRTCT[(!is.na(vate_nadRTCT$Data.Chirurgia) | !is.na(vate_nadRTCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRTCT$Inizio.RT.C.A) | !is.na(vate_nadRTCT$Fine.RT.C.A) | !is.na(vate_nadRTCT$Dose.RT.T.C.A) | !is.na(vate_nadRTCT$Dose.RT.N..C.A) | !is.na(vate_nadRTCT$Frazionamento.RT.C.A)) & (is.na(vate_nadRTCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTCT$N..Cicli..CONC..C.A) & is.na(vate_nadRTCT$Tipo.CT..ADI.) & is.na(vate_nadRTCT$N.Cicli..ADI.) & is.na(vate_nadRTCT$Inizio..ADI.) & is.na(vate_nadRTCT$Fine..ADI.)),]
+
+# vate_nadRTCT_CH_adRT$DataChirurgia_Seconda[vate_nadRTCT_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRTCT_CH_adRT_secondaChirurgia <- vate_nadRTCT_CH_adRT[which(!is.na(vate_nadRTCT_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRTCT_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRTCT_CH_adRT_secondaChirurgia <- vate_nadRTCT_CH_adRT_secondaChirurgia[!duplicated(vate_nadRTCT_CH_adRT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRTCT_CH_adRT)[1] != 0) { vate_nadRTCT_CH_adRT <- cbind(count=sequence(unname(table(vate_nadRTCT_CH_adRT$id))),vate_nadRTCT_CH_adRT)
+col_id <- which( colnames(vate_nadRTCT_CH_adRT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRTCT_CH_adRT)=="Data.visita" ) - 1
+vate_nadRTCT_CH_adRT[vate_nadRTCT_CH_adRT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRTCT_CH_adRT <- subset(vate_nadRTCT_CH_adRT, select = - count )
+}
+
+# vate_nadRTCT_CH_adRT <- smartbind(vate_nadRTCT_CH_adRT,vate_nadRTCT_CH_adRT_secondaChirurgia)
+# vate_nadRTCT_CH_adRT<- vate_nadRTCT_CH_adRT[order(vate_nadRTCT_CH_adRT$id),]
+
+###################################################
+
+#nadRTCT-CH-adCT
+vate_nadRTCT_CH_adCT <- vate_nadRTCT[(!is.na(vate_nadRTCT$Data.Chirurgia) | !is.na(vate_nadRTCT$Tipo.Chirurgia.T)) & (is.na(vate_nadRTCT$Inizio.RT.C.A) & is.na(vate_nadRTCT$Fine.RT.C.A) & is.na(vate_nadRTCT$Dose.RT.T.C.A) & is.na(vate_nadRTCT$Dose.RT.N..C.A) & is.na(vate_nadRTCT$Frazionamento.RT.C.A) & is.na(vate_nadRTCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTCT$N..Cicli..CONC..C.A)) & (!is.na(vate_nadRTCT$Tipo.CT..ADI.) | !is.na(vate_nadRTCT$N.Cicli..ADI.) | !is.na(vate_nadRTCT$Inizio..ADI.) | !is.na(vate_nadRTCT$Fine..ADI.)),]
+
+
+# vate_nadRTCT_CH_adCT$DataChirurgia_Seconda[vate_nadRTCT_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRTCT_CH_adCT_secondaChirurgia <- vate_nadRTCT_CH_adCT[which(!is.na(vate_nadRTCT_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRTCT_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRTCT_CH_adCT_secondaChirurgia <- vate_nadRTCT_CH_adCT_secondaChirurgia[!duplicated(vate_nadRTCT_CH_adCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRTCT_CH_adCT)[1] != 0) { vate_nadRTCT_CH_adCT <- cbind(count=sequence(unname(table(vate_nadRTCT_CH_adCT$id))),vate_nadRTCT_CH_adCT)
+col_id <- which( colnames(vate_nadRTCT_CH_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRTCT_CH_adCT)=="Data.visita" ) - 1
+vate_nadRTCT_CH_adCT[vate_nadRTCT_CH_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRTCT_CH_adCT <- subset(vate_nadRTCT_CH_adCT, select = - count )
+}
+
+# vate_nadRTCT_CH_adCT <- smartbind(vate_nadRTCT_CH_adCT,vate_nadRTCT_CH_adCT_secondaChirurgia)
+# vate_nadRTCT_CH_adCT<- vate_nadRTCT_CH_adCT[order(vate_nadRTCT_CH_adCT$id),]
+
+##########################################
+
+#nadRTCT-CH-adRTCT
+vate_nadRTCT_CH_adRTCT <- vate_nadRTCT[(!is.na(vate_nadRTCT$Data.Chirurgia) | !is.na(vate_nadRTCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRTCT$Inizio.RT.C.A) | !is.na(vate_nadRTCT$Fine.RT.C.A) | !is.na(vate_nadRTCT$Dose.RT.T.C.A) | !is.na(vate_nadRTCT$Dose.RT.N..C.A) | !is.na(vate_nadRTCT$Frazionamento.RT.C.A)) & (!is.na(vate_nadRTCT$Tipo.CT..CONC..C.A) | !is.na(vate_nadRTCT$N..Cicli..CONC..C.A)) & (is.na(vate_nadRTCT$Tipo.CT..ADI.) & is.na(vate_nadRTCT$N.Cicli..ADI.) & is.na(vate_nadRTCT$Inizio..ADI.) & is.na(vate_nadRTCT$Fine..ADI.)),]
+
+
+# vate_nadRTCT_CH_adRTCT$DataChirurgia_Seconda[vate_nadRTCT_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRTCT_CH_adRTCT_secondaChirurgia <- vate_nadRTCT_CH_adRTCT[which(!is.na(vate_nadRTCT_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRTCT_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRTCT_CH_adRTCT_secondaChirurgia <- vate_nadRTCT_CH_adRTCT_secondaChirurgia[!duplicated(vate_nadRTCT_CH_adRTCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRTCT_CH_adRTCT)[1] != 0) { vate_nadRTCT_CH_adRTCT <- cbind(count=sequence(unname(table(vate_nadRTCT_CH_adRTCT$id))),vate_nadRTCT_CH_adRTCT)
+col_id <- which( colnames(vate_nadRTCT_CH_adRTCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRTCT_CH_adRTCT)=="Data.visita" ) - 1
+vate_nadRTCT_CH_adRTCT[vate_nadRTCT_CH_adRTCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRTCT_CH_adRTCT <- subset(vate_nadRTCT_CH_adRTCT, select = - count )
+}
+
+# vate_nadRTCT_CH_adRTCT <- smartbind(vate_nadRTCT_CH_adRTCT,vate_nadRTCT_CH_adRTCT_secondaChirurgia)
+# vate_nadRTCT_CH_adRTCT<- vate_nadRTCT_CH_adRTCT[order(vate_nadRTCT_CH_adRTCT$id),]
+
+#############################################
+
+#nadRTCT-CH-adRT-adCT
+vate_nadRTCT_CH_adRT_adCT <- vate_nadRTCT[(!is.na(vate_nadRTCT$Data.Chirurgia) | !is.na(vate_nadRTCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadRTCT$Inizio.RT.C.A) | !is.na(vate_nadRTCT$Fine.RT.C.A) | !is.na(vate_nadRTCT$Dose.RT.T.C.A) | !is.na(vate_nadRTCT$Dose.RT.N..C.A) | !is.na(vate_nadRTCT$Frazionamento.RT.C.A)) & (is.na(vate_nadRTCT$Tipo.CT..CONC..C.A) & is.na(vate_nadRTCT$N..Cicli..CONC..C.A)) & (!is.na(vate_nadRTCT$Tipo.CT..ADI.) | !is.na(vate_nadRTCT$N.Cicli..ADI.) | !is.na(vate_nadRTCT$Inizio..ADI.) | !is.na(vate_nadRTCT$Fine..ADI.)),]
+
+
+# vate_nadRTCT_CH_adRT_adCT$DataChirurgia_Seconda[vate_nadRTCT_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadRTCT_CH_adRT_adCT_secondaChirurgia <- vate_nadRTCT_CH_adRT_adCT[which(!is.na(vate_nadRTCT_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadRTCT_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadRTCT_CH_adRT_adCT_secondaChirurgia <- vate_nadRTCT_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_nadRTCT_CH_adRT_adCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadRTCT_CH_adRT_adCT)[1] != 0) { vate_nadRTCT_CH_adRT_adCT <- cbind(count=sequence(unname(table(vate_nadRTCT_CH_adRT_adCT$id))),vate_nadRTCT_CH_adRT_adCT)
+col_id <- which( colnames(vate_nadRTCT_CH_adRT_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadRTCT_CH_adRT_adCT)=="Data.visita" ) - 1
+vate_nadRTCT_CH_adRT_adCT[vate_nadRTCT_CH_adRT_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadRTCT_CH_adRT_adCT <- subset(vate_nadRTCT_CH_adRT_adCT, select = - count )
+}
+
+# vate_nadRTCT_CH_adRT_adCT <- smartbind(vate_nadRTCT_CH_adRT_adCT,vate_nadRTCT_CH_adRT_adCT_secondaChirurgia)
+# vate_nadRTCT_CH_adRT_adCT<- vate_nadRTCT_CH_adRT_adCT[order(vate_nadRTCT_CH_adRT_adCT$id),]
+
+###############################
+
+##################################################### ALL TREATMENTS FROM nadCT ##################################################################
+
+#nadCT ONLY
+vate_nadCTonly <- vate_nadCT[is.na(vate_nadCT$Data.Chirurgia) & is.na(vate_nadCT$Tipo.Chirurgia.T)  & is.na(vate_nadCT$Inizio.RT.C.A) & is.na(vate_nadCT$Fine.RT.C.A) & is.na(vate_nadCT$Dose.RT.T.C.A) & is.na(vate_nadCT$Dose.RT.N..C.A) & is.na(vate_nadCT$Frazionamento.RT.C.A) & is.na(vate_nadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadCT$N..Cicli..CONC..C.A) & is.na(vate_nadCT$Tipo.CT..ADI.) & is.na(vate_nadCT$N.Cicli..ADI.) & is.na(vate_nadCT$Inizio..ADI.) & is.na(vate_nadCT$Fine..ADI.),]
+
+
+# vate_nadCTonly$DataChirurgia_Seconda[vate_nadCTonly$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadCTonly_secondaChirurgia <- vate_nadCTonly[which(!is.na(vate_nadCTonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadCTonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadCTonly_secondaChirurgia <- vate_nadCTonly_secondaChirurgia[!duplicated(vate_nadCTonly_secondaChirurgia$id),]
+
+
+if (dim(vate_nadCTonly)[1] != 0) { vate_nadCTonly <- cbind(count=sequence(unname(table(vate_nadCTonly$id))),vate_nadCTonly)
+col_id <- which( colnames(vate_nadCTonly)=="id" )+1
+col_data_visita <- which( colnames(vate_nadCTonly)=="Data.visita" ) - 1
+vate_nadCTonly[vate_nadCTonly$count != 1, col_id:col_data_visita]<-NA
+vate_nadCTonly <- subset(vate_nadCTonly, select = - count )
+}
+
+# vate_nadCTonly <- smartbind(vate_nadCTonly,vate_nadCTonly_secondaChirurgia)
+# vate_nadCTonly<- vate_nadCTonly[order(vate_nadCTonly$id),]
+
+##########################################
+
+#nadCT-CH
+vate_nadCT_CH <- vate_nadCT[(!is.na(vate_nadCT$Data.Chirurgia) | !is.na(vate_nadCT$Tipo.Chirurgia.T)) & (is.na(vate_nadCT$Inizio.RT.C.A) & is.na(vate_nadCT$Fine.RT.C.A) & is.na(vate_nadCT$Dose.RT.T.C.A) & is.na(vate_nadCT$Dose.RT.N..C.A) & is.na(vate_nadCT$Frazionamento.RT.C.A) & is.na(vate_nadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadCT$N..Cicli..CONC..C.A) & is.na(vate_nadCT$Tipo.CT..ADI.) & is.na(vate_nadCT$N.Cicli..ADI.) & is.na(vate_nadCT$Inizio..ADI.) & is.na(vate_nadCT$Fine..ADI.)),]
+
+
+# vate_nadCT_CH$DataChirurgia_Seconda[vate_nadCT_CH$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadCT_CH_secondaChirurgia <- vate_nadCT_CH[which(!is.na(vate_nadCT_CH$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadCT_CH_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadCT_CH_secondaChirurgia <- vate_nadCT_CH_secondaChirurgia[!duplicated(vate_nadCT_CH_secondaChirurgia$id),]
+
+
+if (dim(vate_nadCT_CH)[1] != 0) { vate_nadCT_CH <- cbind(count=sequence(unname(table(vate_nadCT_CH$id))),vate_nadCT_CH)
+col_id <- which( colnames(vate_nadCT_CH)=="id" )+1
+col_data_visita <- which( colnames(vate_nadCT_CH)=="Data.visita" ) - 1
+vate_nadCT_CH[vate_nadCT_CH$count != 1, col_id:col_data_visita]<-NA
+vate_nadCT_CH <- subset(vate_nadCT_CH, select = - count )
+}
+
+# vate_nadCT_CH <- smartbind(vate_nadCT_CH,vate_nadCT_CH_secondaChirurgia)
+# vate_nadCT_CH<- vate_nadCT_CH[order(vate_nadCT_CH$id),]
+
+###########################################
+
+#nadCT-CH-adRT
+vate_nadCT_CH_adRT <- vate_nadCT[(!is.na(vate_nadCT$Data.Chirurgia) | !is.na(vate_nadCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadCT$Inizio.RT.C.A) | !is.na(vate_nadCT$Fine.RT.C.A) | !is.na(vate_nadCT$Dose.RT.T.C.A) | !is.na(vate_nadCT$Dose.RT.N..C.A) | !is.na(vate_nadCT$Frazionamento.RT.C.A)) & (is.na(vate_nadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadCT$N..Cicli..CONC..C.A) & is.na(vate_nadCT$Tipo.CT..ADI.) & is.na(vate_nadCT$N.Cicli..ADI.) & is.na(vate_nadCT$Inizio..ADI.) & is.na(vate_nadCT$Fine..ADI.)),]
+
+
+# vate_nadCT_CH_adRT$DataChirurgia_Seconda[vate_nadCT_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadCT_CH_adRT_secondaChirurgia <- vate_nadCT_CH_adRT[which(!is.na(vate_nadCT_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadCT_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadCT_CH_adRT_secondaChirurgia <- vate_nadCT_CH_adRT_secondaChirurgia[!duplicated(vate_nadCT_CH_adRT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadCT_CH_adRT)[1] != 0) { vate_nadCT_CH_adRT <- cbind(count=sequence(unname(table(vate_nadCT_CH_adRT$id))),vate_nadCT_CH_adRT)
+col_id <- which( colnames(vate_nadCT_CH_adRT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadCT_CH_adRT)=="Data.visita" ) - 1
+vate_nadCT_CH_adRT[vate_nadCT_CH_adRT$count != 1, col_id:col_data_visita]<-NA
+vate_nadCT_CH_adRT <- subset(vate_nadCT_CH_adRT, select = - count )
+}
+
+# vate_nadCT_CH_adRT <- smartbind(vate_nadCT_CH_adRT,vate_nadCT_CH_adRT_secondaChirurgia)
+# vate_nadCT_CH_adRT<- vate_nadCT_CH_adRT[order(vate_nadCT_CH_adRT$id),]
+
+##################################
+
+#nadCT-CH-adCT
+vate_nadCT_CH_adCT <- vate_nadCT[(!is.na(vate_nadCT$Data.Chirurgia) | !is.na(vate_nadCT$Tipo.Chirurgia.T)) & (is.na(vate_nadCT$Inizio.RT.C.A) & is.na(vate_nadCT$Fine.RT.C.A) & is.na(vate_nadCT$Dose.RT.T.C.A) & is.na(vate_nadCT$Dose.RT.N..C.A) & is.na(vate_nadCT$Frazionamento.RT.C.A) & is.na(vate_nadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadCT$N..Cicli..CONC..C.A)) & (!is.na(vate_nadCT$Tipo.CT..ADI.) | !is.na(vate_nadCT$N.Cicli..ADI.) | !is.na(vate_nadCT$Inizio..ADI.) | !is.na(vate_nadCT$Fine..ADI.)),]
+
+
+# vate_nadCT_CH_adCT$DataChirurgia_Seconda[vate_nadCT_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadCT_CH_adCT_secondaChirurgia <- vate_nadCT_CH_adCT[which(!is.na(vate_nadCT_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadCT_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadCT_CH_adCT_secondaChirurgia <- vate_nadCT_CH_adCT_secondaChirurgia[!duplicated(vate_nadCT_CH_adCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadCT_CH_adCT)[1] != 0) { vate_nadCT_CH_adCT <- cbind(count=sequence(unname(table(vate_nadCT_CH_adCT$id))),vate_nadCT_CH_adCT)
+col_id <- which( colnames(vate_nadCT_CH_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadCT_CH_adCT)=="Data.visita" ) - 1
+vate_nadCT_CH_adCT[vate_nadCT_CH_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadCT_CH_adCT <- subset(vate_nadCT_CH_adCT, select = - count )
+}
+
+# vate_nadCT_CH_adCT <- smartbind(vate_nadCT_CH_adCT,vate_nadCT_CH_adCT_secondaChirurgia)
+# vate_nadCT_CH_adCT<- vate_nadCT_CH_adCT[order(vate_nadCT_CH_adCT$id),]
+
+################################
+
+#nadCT-CH-adRTCT
+vate_nadCT_CH_adRTCT <- vate_nadCT[(!is.na(vate_nadCT$Data.Chirurgia) | !is.na(vate_nadCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadCT$Inizio.RT.C.A) | !is.na(vate_nadCT$Fine.RT.C.A) | !is.na(vate_nadCT$Dose.RT.T.C.A) | !is.na(vate_nadCT$Dose.RT.N..C.A) | !is.na(vate_nadCT$Frazionamento.RT.C.A)) & (!is.na(vate_nadCT$Tipo.CT..CONC..C.A) | !is.na(vate_nadCT$N..Cicli..CONC..C.A)) & (is.na(vate_nadCT$Tipo.CT..ADI.) & is.na(vate_nadCT$N.Cicli..ADI.) & is.na(vate_nadCT$Inizio..ADI.) & is.na(vate_nadCT$Fine..ADI.)),]
+
+
+# vate_nadCT_CH_adRTCT$DataChirurgia_Seconda[vate_nadCT_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadCT_CH_adRTCT_secondaChirurgia <- vate_nadCT_CH_adRTCT[which(!is.na(vate_nadCT_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadCT_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadCT_CH_adRTCT_secondaChirurgia <- vate_nadCT_CH_adRTCT_secondaChirurgia[!duplicated(vate_nadCT_CH_adRTCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadCT_CH_adRTCT)[1] != 0) { vate_nadCT_CH_adRTCT <- cbind(count=sequence(unname(table(vate_nadCT_CH_adRTCT$id))),vate_nadCT_CH_adRTCT)
+col_id <- which( colnames(vate_nadCT_CH_adRTCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadCT_CH_adRTCT)=="Data.visita" ) - 1
+vate_nadCT_CH_adRTCT[vate_nadCT_CH_adRTCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadCT_CH_adRTCT <- subset(vate_nadCT_CH_adRTCT, select = - count )
+}
+
+# vate_nadCT_CH_adRTCT <- smartbind(vate_nadCT_CH_adRTCT,vate_nadCT_CH_adRTCT_secondaChirurgia)
+# vate_nadCT_CH_adRTCT<- vate_nadCT_CH_adRTCT[order(vate_nadCT_CH_adRTCT$id),]
+
+##################################
+
+#nadCT-CH-adRT-adCT
+vate_nadCT_CH_adRT_adCT <- vate_nadCT[(!is.na(vate_nadCT$Data.Chirurgia) | !is.na(vate_nadCT$Tipo.Chirurgia.T)) & (!is.na(vate_nadCT$Inizio.RT.C.A) | !is.na(vate_nadCT$Fine.RT.C.A) | !is.na(vate_nadCT$Dose.RT.T.C.A) | !is.na(vate_nadCT$Dose.RT.N..C.A) | !is.na(vate_nadCT$Frazionamento.RT.C.A)) & (is.na(vate_nadCT$Tipo.CT..CONC..C.A) & is.na(vate_nadCT$N..Cicli..CONC..C.A)) & (!is.na(vate_nadCT$Tipo.CT..ADI.) | !is.na(vate_nadCT$N.Cicli..ADI.) | !is.na(vate_nadCT$Inizio..ADI.) | !is.na(vate_nadCT$Fine..ADI.)),]
+
+
+# vate_nadCT_CH_adRT_adCT$DataChirurgia_Seconda[vate_nadCT_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nadCT_CH_adRT_adCT_secondaChirurgia <- vate_nadCT_CH_adRT_adCT[which(!is.na(vate_nadCT_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nadCT_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nadCT_CH_adRT_adCT_secondaChirurgia <- vate_nadCT_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_nadCT_CH_adRT_adCT_secondaChirurgia$id),]
+
+
+if (dim(vate_nadCT_CH_adRT_adCT)[1] != 0) { vate_nadCT_CH_adRT_adCT <- cbind(count=sequence(unname(table(vate_nadCT_CH_adRT_adCT$id))),vate_nadCT_CH_adRT_adCT)
+col_id <- which( colnames(vate_nadCT_CH_adRT_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_nadCT_CH_adRT_adCT)=="Data.visita" ) - 1
+vate_nadCT_CH_adRT_adCT[vate_nadCT_CH_adRT_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_nadCT_CH_adRT_adCT <- subset(vate_nadCT_CH_adRT_adCT, select = - count )
+}
+
+# vate_nadCT_CH_adRT_adCT <- smartbind(vate_nadCT_CH_adRT_adCT,vate_nadCT_CH_adRT_adCT_secondaChirurgia)
+# vate_nadCT_CH_adRT_adCT<- vate_nadCT_CH_adRT_adCT[order(vate_nadCT_CH_adRT_adCT$id),]
+
+##############################
+
+#################################################################### ALL TREATMENTS FROM noNAD #################################################################
+
+
+#nothing
+vate_nothing <- vate_noNAD[is.na(vate_noNAD$Data.Chirurgia) & is.na(vate_noNAD$Tipo.Chirurgia.T) & is.na(vate_noNAD$Inizio.RT.C.A) & is.na(vate_noNAD$Fine.RT.C.A) & is.na(vate_noNAD$Dose.RT.T.C.A) & is.na(vate_noNAD$Dose.RT.N..C.A) & is.na(vate_noNAD$Frazionamento.RT.C.A) & is.na(vate_noNAD$Tipo.CT..CONC..C.A) & is.na(vate_noNAD$N..Cicli..CONC..C.A) & is.na(vate_noNAD$Tipo.CT..ADI.) & is.na(vate_noNAD$N.Cicli..ADI.) & is.na(vate_noNAD$Inizio..ADI.) & is.na(vate_noNAD$Fine..ADI.),]
+
+# vate_nothing$DataChirurgia_Seconda[vate_nothing$DataChirurgia_Seconda == ""] <- NA
+
+# vate_nothing_secondaChirurgia <- vate_nothing[which(!is.na(vate_nothing$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_nothing_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_nothing_secondaChirurgia <- vate_nothing_secondaChirurgia[!duplicated(vate_nothing_secondaChirurgia$id),]
+
+
+if (dim(vate_nothing)[1] != 0) { vate_nothing <- cbind(count=sequence(unname(table(vate_nothing$id))),vate_nothing)
+col_id <- which( colnames(vate_nothing)=="id" )+1
+col_data_visita <- which( colnames(vate_nothing)=="Data.visita" ) - 1
+vate_nothing[vate_nothing$count != 1, col_id:col_data_visita]<-NA
+vate_nothing <- subset(vate_nothing, select = - count )
+}
+
+# vate_nothing <- smartbind(vate_nothing,vate_nothing_secondaChirurgia)
+# vate_nothing<- vate_nothing[order(vate_nothing$id),]
+
+
+###########################
+
+#CH
+vate_CHonly <- vate_noNAD[(!is.na(vate_noNAD$Data.Chirurgia) | !is.na(vate_noNAD$Tipo.Chirurgia.T)) & (is.na(vate_noNAD$Inizio.RT.C.A) & is.na(vate_noNAD$Fine.RT.C.A) & is.na(vate_noNAD$Dose.RT.T.C.A) & is.na(vate_noNAD$Dose.RT.N..C.A) & is.na(vate_noNAD$Frazionamento.RT.C.A) & is.na(vate_noNAD$Tipo.CT..CONC..C.A) & is.na(vate_noNAD$N..Cicli..CONC..C.A) & is.na(vate_noNAD$Tipo.CT..ADI.) & is.na(vate_noNAD$N.Cicli..ADI.) & is.na(vate_noNAD$Inizio..ADI.) & is.na(vate_noNAD$Fine..ADI.)),]
+
+
+# vate_CHonly$DataChirurgia_Seconda[vate_CHonly$DataChirurgia_Seconda == ""] <- NA
+
+# vate_CHonly_secondaChirurgia <- vate_CHonly[which(!is.na(vate_CHonly$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_CHonly_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_CHonly_secondaChirurgia <- vate_CHonly_secondaChirurgia[!duplicated(vate_CHonly_secondaChirurgia$id),]
+
+
+if (dim(vate_CHonly)[1] != 0) { vate_CHonly <- cbind(count=sequence(unname(table(vate_CHonly$id))),vate_CHonly)
+col_id <- which( colnames(vate_CHonly)=="id" )+1
+col_data_visita <- which( colnames(vate_CHonly)=="Data.visita" ) - 1
+vate_CHonly[vate_CHonly$count != 1, col_id:col_data_visita]<-NA
+vate_CHonly <- subset(vate_CHonly, select = - count )
+}
+
+# vate_CHonly <- smartbind(vate_CHonly,vate_CHonly_secondaChirurgia)
+# vate_CHonly<- vate_CHonly[order(vate_CHonly$id),]
+
+##############################
+
+#CH-adRT
+vate_CH_adRT <- vate_noNAD[(!is.na(vate_noNAD$Data.Chirurgia) | !is.na(vate_noNAD$Tipo.Chirurgia.T)) & (!is.na(vate_noNAD$Inizio.RT.C.A) | !is.na(vate_noNAD$Fine.RT.C.A) | !is.na(vate_noNAD$Dose.RT.T.C.A) | !is.na(vate_noNAD$Dose.RT.N..C.A) | !is.na(vate_noNAD$Frazionamento.RT.C.A)) & (is.na(vate_noNAD$Tipo.CT..CONC..C.A) & is.na(vate_noNAD$N..Cicli..CONC..C.A) & is.na(vate_noNAD$Tipo.CT..ADI.) & is.na(vate_noNAD$N.Cicli..ADI.) & is.na(vate_noNAD$Inizio..ADI.) & is.na(vate_noNAD$Fine..ADI.)),]
+
+
+# vate_CH_adRT$DataChirurgia_Seconda[vate_CH_adRT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_CH_adRT_secondaChirurgia <- vate_CH_adRT[which(!is.na(vate_CH_adRT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_CH_adRT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_CH_adRT_secondaChirurgia <- vate_CH_adRT_secondaChirurgia[!duplicated(vate_CH_adRT_secondaChirurgia$id),]
+
+
+if (dim(vate_CH_adRT)[1] != 0) { vate_CH_adRT <- cbind(count=sequence(unname(table(vate_CH_adRT$id))),vate_CH_adRT)
+col_id <- which( colnames(vate_CH_adRT)=="id" )+1
+col_data_visita <- which( colnames(vate_CH_adRT)=="Data.visita" ) - 1
+vate_CH_adRT[vate_CH_adRT$count != 1, col_id:col_data_visita]<-NA
+vate_CH_adRT <- subset(vate_CH_adRT, select = - count )
+}
+
+# vate_CH_adRT <- smartbind(vate_CH_adRT,vate_CH_adRT_secondaChirurgia)
+# vate_CH_adRT<- vate_CH_adRT[order(vate_CH_adRT$id),]
+
+###############################
+
+#CH-adCT
+vate_CH_adCT <- vate_noNAD[(!is.na(vate_noNAD$Data.Chirurgia) | !is.na(vate_noNAD$Tipo.Chirurgia.T)) & (is.na(vate_noNAD$Inizio.RT.C.A) & is.na(vate_noNAD$Fine.RT.C.A) & is.na(vate_noNAD$Dose.RT.T.C.A) & is.na(vate_noNAD$Dose.RT.N..C.A) & is.na(vate_noNAD$Frazionamento.RT.C.A) & is.na(vate_noNAD$Tipo.CT..CONC..C.A) & is.na(vate_noNAD$N..Cicli..CONC..C.A)) & (!is.na(vate_noNAD$Tipo.CT..ADI.) | !is.na(vate_noNAD$N.Cicli..ADI.) | !is.na(vate_noNAD$Inizio..ADI.) | !is.na(vate_noNAD$Fine..ADI.)),]
+
+
+# vate_CH_adCT.unique <- vate_CH_adCT[!duplicated(vate_CH_adCT$id),]
+# vate_CH_adCT.unique_nofup <- subset(vate_CH_adCT.unique, select=-c(Data.visita,GTox.cute,GTox.mucos,GTox.GI..Sup,GTox.GI..Inf,GTox.Fatigue,GTox.CNS,GTox.GU,GTox.mucos.esofago,GTox.GU.rene.uretere,GTox.emat,GTox.GU.vescica.uretra))
+
+# vate_CH_adCT$DataChirurgia_Seconda[vate_CH_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_CH_adCT_secondaChirurgia <- vate_CH_adCT[which(!is.na(vate_CH_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_CH_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_CH_adCT_secondaChirurgia <- vate_CH_adCT_secondaChirurgia[!duplicated(vate_CH_adCT_secondaChirurgia$id),]
+
+
+if (dim(vate_CH_adCT)[1] != 0) { vate_CH_adCT <- cbind(count=sequence(unname(table(vate_CH_adCT$id))),vate_CH_adCT)
+col_id <- which( colnames(vate_CH_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_CH_adCT)=="Data.visita" ) - 1
+vate_CH_adCT[vate_CH_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_CH_adCT <- subset(vate_CH_adCT, select = - count )
+}
+
+# vate_CH_adCT <- smartbind(vate_CH_adCT,vate_CH_adCT_secondaChirurgia)
+# vate_CH_adCT<- vate_CH_adCT[order(vate_CH_adCT$id),]
+
+#######################
+
+#CH-adRTCT
+vate_CH_adRTCT <- vate_noNAD[(!is.na(vate_noNAD$Data.Chirurgia) | !is.na(vate_noNAD$Tipo.Chirurgia.T)) & (!is.na(vate_noNAD$Inizio.RT.C.A) | !is.na(vate_noNAD$Fine.RT.C.A) | !is.na(vate_noNAD$Dose.RT.T.C.A) | !is.na(vate_noNAD$Dose.RT.N..C.A) | !is.na(vate_noNAD$Frazionamento.RT.C.A)) & (!is.na(vate_noNAD$Tipo.CT..CONC..C.A) | !is.na(vate_noNAD$N..Cicli..CONC..C.A)) & (is.na(vate_noNAD$Tipo.CT..ADI.) & is.na(vate_noNAD$N.Cicli..ADI.) & is.na(vate_noNAD$Inizio..ADI.) & is.na(vate_noNAD$Fine..ADI.)),]
+
+
+# vate_CH_adRTCT$DataChirurgia_Seconda[vate_CH_adRTCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_CH_adRTCT_secondaChirurgia <- vate_CH_adRTCT[which(!is.na(vate_CH_adRTCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_CH_adRTCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_CH_adRTCT_secondaChirurgia <- vate_CH_adRTCT_secondaChirurgia[!duplicated(vate_CH_adRTCT_secondaChirurgia$id),]
+
+
+if (dim(vate_CH_adRTCT)[1] != 0) { vate_CH_adRTCT <- cbind(count=sequence(unname(table(vate_CH_adRTCT$id))),vate_CH_adRTCT)
+col_id <- which( colnames(vate_CH_adRTCT)=="id" )+1
+col_data_visita <- which( colnames(vate_CH_adRTCT)=="Data.visita" ) - 1
+vate_CH_adRTCT[vate_CH_adRTCT$count != 1, col_id:col_data_visita]<-NA
+vate_CH_adRTCT <- subset(vate_CH_adRTCT, select = - count )
+}
+
+# vate_CH_adRTCT <- smartbind(vate_CH_adRTCT,vate_CH_adRTCT_secondaChirurgia)
+# vate_CH_adRTCT<- vate_CH_adRTCT[order(vate_CH_adRTCT$id),]
+
+##################################
+
+#CH-adRT-adCT
+vate_CH_adRT_adCT <- vate_noNAD[(!is.na(vate_noNAD$Data.Chirurgia) | !is.na(vate_noNAD$Tipo.Chirurgia.T)) & (!is.na(vate_noNAD$Inizio.RT.C.A) | !is.na(vate_noNAD$Fine.RT.C.A) | !is.na(vate_noNAD$Dose.RT.T.C.A) | !is.na(vate_noNAD$Dose.RT.N..C.A) | !is.na(vate_noNAD$Frazionamento.RT.C.A)) & (is.na(vate_noNAD$Tipo.CT..CONC..C.A) & is.na(vate_noNAD$N..Cicli..CONC..C.A)) & (!is.na(vate_noNAD$Tipo.CT..ADI.) | !is.na(vate_noNAD$N.Cicli..ADI.) | !is.na(vate_noNAD$Inizio..ADI.) | !is.na(vate_noNAD$Fine..ADI.)),]
+
+
+# vate_CH_adRT_adCT$DataChirurgia_Seconda[vate_CH_adRT_adCT$DataChirurgia_Seconda == ""] <- NA
+
+# vate_CH_adRT_adCT_secondaChirurgia <- vate_CH_adRT_adCT[which(!is.na(vate_CH_adRT_adCT$DataChirurgia_Seconda)),c("id","DataChirurgia_Seconda","TipoChirurgiaT_Seconda","TipoChirurgiaN_Seconda","Numero_Linfonodi_Esportati_Seconda","Residuo_Seconda","TRG_Seconda")]
+# names(vate_CH_adRT_adCT_secondaChirurgia) <- c("id","Data.Chirurgia","Tipo.Chirurgia.T","Tipo.Chirurgia.N","Nr..linfonodi.esportati","Residuo","TRG")
+# vate_CH_adRT_adCT_secondaChirurgia <- vate_CH_adRT_adCT_secondaChirurgia[!duplicated(vate_CH_adRT_adCT_secondaChirurgia$id),]
+
+
+
+if (dim(vate_CH_adRT_adCT)[1] != 0) { vate_CH_adRT_adCT <- cbind(count=sequence(unname(table(vate_CH_adRT_adCT$id))),vate_CH_adRT_adCT)
+col_id <- which( colnames(vate_CH_adRT_adCT)=="id" )+1
+col_data_visita <- which( colnames(vate_CH_adRT_adCT)=="Data.visita" ) - 1
+vate_CH_adRT_adCT[vate_CH_adRT_adCT$count != 1, col_id:col_data_visita]<-NA
+vate_CH_adRT_adCT <- subset(vate_CH_adRT_adCT, select = - count )
+}
+
+# vate_CH_adRT_adCT <- smartbind(vate_CH_adRT_adCT,vate_CH_adRT_adCT_secondaChirurgia)
+# vate_CH_adRT_adCT<- vate_CH_adRT_adCT[order(vate_CH_adRT_adCT$id),]
+		 
+########################################
+
+setwd("C:/Users/jacopo/Desktop/KBO/retto/byTreatment")
+
+write.table(vate_nadRTonly, file = "vate_nadRTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_CH, file = "vate_nadRT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_CH_adRT, file = "vate_nadRT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_CH_adCT, file = "vate_nadRT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_CH_adRTCT, file = "vate_nadRT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_CH_adRT_adCT, file = "vate_nadRT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_nadCTonly, file = "vate_nadRT_nadCTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_nadCT_CH, file = "vate_nadRT_nadCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_nadCT_CH_adRT, file = "vate_nadRT_nadCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_nadCT_CH_adCT, file = "vate_nadRT_nadCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_nadCT_CH_adRTCT, file = "vate_nadRT_nadCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRT_nadCT_CH_adRT_adCT, file = "vate_nadRT_nadCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRTCTonly, file = "vate_nadRTCTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRTCT_CH, file = "vate_nadRTCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRTCT_CH_adRT, file = "vate_nadRTCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRTCT_CH_adCT, file = "vate_nadRTCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRTCT_CH_adRTCT, file = "vate_nadRTCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadRTCT_CH_adRT_adCT, file = "vate_nadRTCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadCTonly, file = "vate_nadCTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadCT_CH, file = "vate_nadCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadCT_CH_adRT, file = "vate_nadCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadCT_CH_adCT, file = "vate_nadCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadCT_CH_adRTCT, file = "vate_nadCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nadCT_CH_adRT_adCT, file = "vate_nadCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_nothing, file = "vate_nothing.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_CHonly, file = "vate_CHonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_CH_adRT, file = "vate_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_CH_adCT, file = "vate_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_CH_adRTCT, file = "vate_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(vate_CH_adRT_adCT, file = "vate_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE) 		
+
+
+
+read.table(vate_nadRTonly, file = "vate_nadRTonly.txt",   sep = "\t", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_CH, file = "vate_nadRT_CH.txt",   sep = "\t",, na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_CH_adRT, file = "vate_nadRT_CH_adRT.txt",   sep = "\t", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_CH_adCT, file = "vate_nadRT_CH_adCT.txt",   sep = "\t",na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_CH_adRTCT, file = "vate_nadRT_CH_adRTCT.txt",   sep = "\t", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_CH_adRT_adCT, file = "vate_nadRT_CH_adRT_adCT.txt",   sep = "\t", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_nadCTonly, file = "vate_nadRT_nadCTonly.txt",   sep = "\t", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_nadCT_CH, file = "vate_nadRT_nadCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_nadCT_CH_adRT, file = "vate_nadRT_nadCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_nadCT_CH_adCT, file = "vate_nadRT_nadCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_nadCT_CH_adRTCT, file = "vate_nadRT_nadCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRT_nadCT_CH_adRT_adCT, file = "vate_nadRT_nadCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRTCTonly, file = "vate_nadRTCTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRTCT_CH, file = "vate_nadRTCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRTCT_CH_adRT, file = "vate_nadRTCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRTCT_CH_adCT, file = "vate_nadRTCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRTCT_CH_adRTCT, file = "vate_nadRTCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadRTCT_CH_adRT_adCT, file = "vate_nadRTCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadCTonly, file = "vate_nadCTonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadCT_CH, file = "vate_nadCT_CH.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadCT_CH_adRT, file = "vate_nadCT_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadCT_CH_adCT, file = "vate_nadCT_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadCT_CH_adRTCT, file = "vate_nadCT_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nadCT_CH_adRT_adCT, file = "vate_nadCT_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_nothing, file = "vate_nothing.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_CHonly, file = "vate_CHonly.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_CH_adRT, file = "vate_CH_adRT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_CH_adCT, file = "vate_CH_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_CH_adRTCT, file = "vate_CH_adRTCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE)
+read.table(vate_CH_adRT_adCT, file = "vate_CH_adRT_adCT.txt",   sep = "\t", eol = "\n", na=" ", dec = ".", row.names = FALSE, col.names = TRUE) 	 
+
+				
+
+				
+
+					 
+					 
